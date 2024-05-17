@@ -1,4 +1,4 @@
-package edu.ucsb.cs156.organic.config;
+package edu.ucsb.cs156.organic.beans;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Configuration;
 import com.tianleyu.github.GitHubApp;
 
 @Configuration
-public class GitHubAppConfig {
+public class GitHubAppBean {
 
     @Value("${spring.security.oauth2.client.registration.github.client-id}")
     private String clientId;

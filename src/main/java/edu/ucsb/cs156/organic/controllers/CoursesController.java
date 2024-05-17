@@ -56,11 +56,7 @@ public class CoursesController extends ApiController {
     UserRepository userRepository;
 
     @Autowired
-    private final GitHubApp gitHubApp;
-
-    public CoursesController(GitHubApp gitHubApp) {
-        this.gitHubApp = gitHubApp; // Dependency Injection
-    }
+    GitHubApp gitHubApp;
 
     @Operation(summary = "List all courses")
     @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")

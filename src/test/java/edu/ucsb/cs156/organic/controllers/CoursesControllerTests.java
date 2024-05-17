@@ -24,6 +24,7 @@ import java.util.Optional;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.tianleyu.github.GitHubApp;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -77,6 +78,9 @@ public class CoursesControllerTests extends ControllerTestCase {
 
     @MockBean
     StaffRepository courseStaffRepository;
+
+    @MockBean
+    GitHubApp gitHubApp;
 
     @Autowired
     CurrentUserService userService;
