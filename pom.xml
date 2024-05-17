@@ -46,6 +46,30 @@
     <artifactId>json</artifactId>
     <version>20240303</version>
 </dependency>
+ <!-- <dependency>
+        <groupId>org.powermock</groupId>
+        <artifactId>powermock-module-junit4</artifactId>
+        <version>2.0.9</version>
+        <scope>test</scope>
+    </dependency>
+    <dependency>
+        <groupId>org.powermock</groupId>
+        <artifactId>powermock-api-mockito2</artifactId>
+        <version>2.0.9</version>
+        <scope>test</scope>
+    </dependency> -->
+    <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter-engine</artifactId>
+        <version>5.7.0</version>
+        <scope>test</scope>
+    </dependency>
+    <dependency>
+    <groupId>org.mockito</groupId>
+    <artifactId>mockito-inline</artifactId>
+    <version>3.4.0</version>
+    <scope>test</scope>
+</dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
@@ -195,6 +219,8 @@
                         <exclude>**/edu/ucsb/cs156/organic/controllers/FrontendProxyController.*</exclude>
                         <exclude>**/edu/ucsb/cs156/organic/services/CurrentUserServiceImpl.*</exclude>
                         <exclude>**/edu/ucsb/cs156/organic/OrganicApplication.*</exclude>
+                        <exclude>**/github/Utils.*</exclude><!-- Excluding since it's copied from the internet and hard to test -->
+                        <exclude>**/github/GitHubAppException.*</exclude> <!-- Excluding since it does not have any actual code -->
                     </excludes>
                 </configuration>
                 <executions>
@@ -282,6 +308,8 @@
                         <param>edu.ucsb.cs156.organic.config.SecurityConfig</param>
                         <param>edu.ucsb.cs156.organic.config.SecurityConfig.MyCsrfRequestMatcher</param>
                         <param>edu.ucsb.cs156.organic.services.GrantedAuthoritiesService</param>
+                        <param>com.tianleyu.github.Utils</param><!-- Excluding since it's copied from the internet and hard to test -->
+                        <param>com.tianleyu.github.GitHubAppException</param><!-- Excluding since it does not have any actual code -->
                     </excludedClasses>
                     <excludedTestClasses></excludedTestClasses>
                     <outputFormats>

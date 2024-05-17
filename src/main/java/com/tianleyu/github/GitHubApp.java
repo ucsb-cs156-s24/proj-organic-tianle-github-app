@@ -20,13 +20,9 @@ public class GitHubApp {
         client = HttpClient.newHttpClient();
     }
 
-    public String appInfo() {
-        try {
-            HttpResponse<String> response = get("/app");
-            return response.body();
-        } catch (HttpClientErrorException e) {
-            return e.getMessage();
-        }
+    public JSONObject appInfo() {
+        HttpResponse<String> response = get("/app");
+        return new JSONObject(response.body());
     }
 
     public GitHubAppOrg org(String org) throws GitHubAppException {
@@ -38,7 +34,7 @@ public class GitHubApp {
     }
 
     public HttpResponse<String> get(String url)
-            throws HttpClientErrorException {
+            throws GitHubAppException {
         try {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(new URI("https://api.github.com" + url))
@@ -50,7 +46,7 @@ public class GitHubApp {
                     .build();
             return client.send(request, HttpResponse.BodyHandlers.ofString());
         } catch (Exception e) {
-            throw new HttpClientErrorException(null, e.getMessage());
+            throw new GitHubAppException(e.getMessage());
         }
     }
 }
