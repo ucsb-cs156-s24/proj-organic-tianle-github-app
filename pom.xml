@@ -295,9 +295,11 @@
                     <verbose>true</verbose>
                     <targetClasses>
                         <param>edu.ucsb.cs156.*</param>
+                        <param>com.tianleyu.github.*</param>
                     </targetClasses>
                     <targetTests>
                         <param>edu.ucsb.cs156.*</param>
+                        <param>com.tianleyu.github.*</param>
                     </targetTests>
                     <excludedClasses>
                         <param>edu.ucsb.cs156.organic.aop.LoggingAspect</param>
@@ -308,6 +310,7 @@
                         <param>edu.ucsb.cs156.organic.config.SecurityConfig</param>
                         <param>edu.ucsb.cs156.organic.config.SecurityConfig.MyCsrfRequestMatcher</param>
                         <param>edu.ucsb.cs156.organic.services.GrantedAuthoritiesService</param>
+                        <param>edu.ucsb.cs156.organic.beans.GitHubAppBean</param><!-- Excluded due to reasons similar to config classes above -->
                         <param>com.tianleyu.github.Utils</param><!-- Excluding since it's copied from the internet and hard to test -->
                         <param>com.tianleyu.github.GitHubAppException</param><!-- Excluding since it does not have any actual code -->
                     </excludedClasses>
