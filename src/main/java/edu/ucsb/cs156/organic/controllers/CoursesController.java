@@ -28,6 +28,10 @@ import org.springframework.web.bind.annotation.RestController;
 import edu.ucsb.cs156.organic.errors.EntityNotFoundException;
 import org.springframework.security.access.AccessDeniedException;
 
+import com.tianleyu.github.GitHubApp;
+import com.tianleyu.github.JwtProvider;
+import org.kohsuke.github.GitHub;
+
 import java.time.LocalDateTime;
 
 import javax.transaction.Transactional;
@@ -49,6 +53,13 @@ public class CoursesController extends ApiController {
 
     @Autowired
     UserRepository userRepository;
+
+    @Autowired
+    private final GitHubApp gitHubApp;
+
+    public CoursesController(GitHubApp gitHubApp) {
+        this.gitHubApp = gitHubApp; // Dependency Injection
+    }
 
     @Operation(summary = "List all courses")
     @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
@@ -79,6 +90,7 @@ public class CoursesController extends ApiController {
                 String.format("User %s is not authorized to get course %d", u.getGithubLogin(), id)));
         }
 
+        log.warn("\u001b[31m" + gitHubApp.appInfo() + "\u001b[0m");
         return course;
 }
 
