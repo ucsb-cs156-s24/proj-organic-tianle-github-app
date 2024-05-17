@@ -13,7 +13,7 @@ import org.json.*;
 
 public class GitHubApp {
     private JwtProvider jwtProvider;
-    HttpClient client;
+    private  HttpClient client;
 
     public GitHubApp(String appId, String pkFile) {
         jwtProvider = new JwtProvider(appId, pkFile);
@@ -36,54 +36,17 @@ public class GitHubApp {
 
     public HttpResponse<String> get(String url)
             throws GitHubAppException {
-        try {
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(new URI("https://api.github.com" + url))
-                    .timeout(Duration.of(10L, ChronoUnit.SECONDS)) // Change 10 to 10L
-                    .header("Authorization", "Bearer " + jwtProvider.getJwt())
-                    .header("Accept", "application/vnd.github.v3+json")
-                    .header("X-GitHub-Api-Version", "2022-11-28")
-                    .GET()
-                    .build();
-            return client.send(request, HttpResponse.BodyHandlers.ofString());
-        } catch (Exception e) {
-            throw new GitHubAppException(e.getMessage());
-        }
+        return Utils.get(url, jwtProvider.getJwt(), client);
     }
 
     public HttpResponse<String> post(String url, JSONObject body)
             throws GitHubAppException {
-        try {
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(new URI("https://api.github.com" + url))
-                    .timeout(Duration.of(10L, ChronoUnit.SECONDS)) // Change 10 to 10L
-                    .header("Authorization", "Bearer " + jwtProvider.getJwt())
-                    .header("Accept", "application/vnd.github.v3+json")
-                    .header("X-GitHub-Api-Version", "2022-11-28")
-                    .header("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(body.toString()))
-                    .build();
-            return client.send(request, HttpResponse.BodyHandlers.ofString());
-        } catch (Exception e) {
-            throw new GitHubAppException(e.getMessage());
-        }
+        return Utils.post(url, body.toString(), jwtProvider.getJwt(), client);
+
     }
 
     public HttpResponse<String> post(String url, String body)
             throws GitHubAppException {
-        try {
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(new URI("https://api.github.com" + url))
-                    .timeout(Duration.of(10L, ChronoUnit.SECONDS)) // Change 10 to 10L
-                    .header("Authorization", "Bearer " + jwtProvider.getJwt())
-                    .header("Accept", "application/vnd.github.v3+json")
-                    .header("X-GitHub-Api-Version", "2022-11-28")
-                    .header("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(body))
-                    .build();
-            return client.send(request, HttpResponse.BodyHandlers.ofString());
-        } catch (Exception e) {
-            throw new GitHubAppException(e.getMessage());
-        }
+        return Utils.post(url, body, jwtProvider.getJwt(), client);
     }
 }

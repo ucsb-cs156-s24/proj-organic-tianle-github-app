@@ -1,11 +1,22 @@
 package com.tianleyu.github;
 
 import java.io.File;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
 import java.security.Key;
 import java.security.spec.PKCS8EncodedKeySpec;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.Date;
+
+import org.json.JSONObject;
+import org.springframework.security.oauth2.client.OAuth2AuthorizeRequest;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
+import org.springframework.security.oauth2.client.ReactiveOAuth2AuthorizedClientManager;
 
 import io.jsonwebtoken.JwtBuilder;
 import io.jsonwebtoken.Jwts;
@@ -16,9 +27,10 @@ import com.google.common.io.Files;
 
 @Slf4j
 public class Utils {
-    static PrivateKey get(String filename) throws Exception {
+    static private PrivateKey get(String filename) throws Exception {
         File directory = new File(filename);
-        log.warn("\u001b[31m[com.tianleyu.github.Utils] Using key file " + directory.getAbsolutePath() + " to sign JWT\u001b[0m");
+        log.warn("\u001b[31m[com.tianleyu.github.Utils] Using key file " + directory.getAbsolutePath()
+                + " to sign JWT\u001b[0m");
         byte[] keyBytes = Files.toByteArray(new File(filename));
 
         PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(keyBytes);
@@ -26,7 +38,7 @@ public class Utils {
         return kf.generatePrivate(spec);
     }
 
-    static String createJWT(String githubAppId, long ttlMillis, String keyFile) throws Exception {
+    static public String createJWT(String githubAppId, long ttlMillis, String keyFile) throws Exception {
         // The JWT signature algorithm we will be using to sign the token
         SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.RS256;
 
@@ -57,4 +69,38 @@ public class Utils {
     // GitHub gitHubApp = new GitHubBuilder().withJwtToken(jwtToken).build();
     // }
 
+    static public HttpResponse<String> post(String url, String body, String accessToken, HttpClient client)
+            throws GitHubAppException {
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(new URI("https://api.github.com" + url))
+                    .timeout(Duration.of(10L, ChronoUnit.SECONDS)) // Change 10 to 10L
+                    .header("Authorization", "Bearer " + accessToken)
+                    .header("Accept", "application/vnd.github.v3+json")
+                    .header("X-GitHub-Api-Version", "2022-11-28")
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(body))
+                    .build();
+            return client.send(request, HttpResponse.BodyHandlers.ofString());
+        } catch (Exception e) {
+            throw new GitHubAppException(e.getMessage());
+        }
+    }
+
+    static public HttpResponse<String> get(String url, String accessToken, HttpClient client)
+            throws GitHubAppException {
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(new URI("https://api.github.com" + url))
+                    .timeout(Duration.of(10L, ChronoUnit.SECONDS)) // Change 10 to 10L
+                    .header("Authorization", "Bearer " + accessToken)
+                    .header("Accept", "application/vnd.github.v3+json")
+                    .header("X-GitHub-Api-Version", "2022-11-28")
+                    .GET()
+                    .build();
+            return client.send(request, HttpResponse.BodyHandlers.ofString());
+        } catch (Exception e) {
+            throw new GitHubAppException(e.getMessage());
+        }
+    }
 }

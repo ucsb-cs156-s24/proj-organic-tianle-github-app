@@ -16,6 +16,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.oauth2.client.ReactiveOAuth2AuthorizedClientManager;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -58,12 +59,16 @@ public class CoursesController extends ApiController {
     @Autowired
     GitHubApp gitHubApp;
 
+    @Autowired
+    ReactiveOAuth2AuthorizedClientManager authorizedClientManager;
+
     @Operation(summary = "List all courses")
     @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     @GetMapping("/all")
     public Iterable<Course> allCourses() {
         User u = getCurrentUser().getUser();
         log.info("u={}", u);
+
         if (u.isAdmin()) {
             return courseRepository.findAll();
         } else {

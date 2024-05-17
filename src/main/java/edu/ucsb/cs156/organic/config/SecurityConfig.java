@@ -21,6 +21,12 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.authority.mapping.GrantedAuthoritiesMapper;
+import org.springframework.security.oauth2.client.AuthorizedClientServiceReactiveOAuth2AuthorizedClientManager;
+import org.springframework.security.oauth2.client.ReactiveOAuth2AuthorizedClientManager;
+import org.springframework.security.oauth2.client.ReactiveOAuth2AuthorizedClientProvider;
+import org.springframework.security.oauth2.client.ReactiveOAuth2AuthorizedClientProviderBuilder;
+import org.springframework.security.oauth2.client.ReactiveOAuth2AuthorizedClientService;
+import org.springframework.security.oauth2.client.registration.ReactiveClientRegistrationRepository;
 import org.springframework.security.oauth2.core.user.OAuth2UserAuthority;
 import org.springframework.security.web.authentication.Http403ForbiddenEntryPoint;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
@@ -118,14 +124,31 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     }
     return result;
   }
+
   @Bean
   FilterRegistrationBean<ForwardedHeaderFilter> forwardedHeaderFilter() {
-		
-	    final FilterRegistrationBean<ForwardedHeaderFilter> filterRegistrationBean = new FilterRegistrationBean<ForwardedHeaderFilter>();
-	    
-	    filterRegistrationBean.setFilter(new ForwardedHeaderFilter());
-	    filterRegistrationBean.setOrder(Ordered.HIGHEST_PRECEDENCE);
-	    
-	    return filterRegistrationBean;
-	}
+
+    final FilterRegistrationBean<ForwardedHeaderFilter> filterRegistrationBean = new FilterRegistrationBean<ForwardedHeaderFilter>();
+
+    filterRegistrationBean.setFilter(new ForwardedHeaderFilter());
+    filterRegistrationBean.setOrder(Ordered.HIGHEST_PRECEDENCE);
+
+    return filterRegistrationBean;
+  }
+
+  @Bean
+  public ReactiveOAuth2AuthorizedClientManager authorizedClientManager(
+      final ReactiveClientRegistrationRepository clientRegistrationRepository,
+      final ReactiveOAuth2AuthorizedClientService clientService) {
+    ReactiveOAuth2AuthorizedClientProvider authorizedClientProvider = ReactiveOAuth2AuthorizedClientProviderBuilder
+        .builder()
+        .clientCredentials()
+        .build();
+
+    AuthorizedClientServiceReactiveOAuth2AuthorizedClientManager authorizedClientManager = new AuthorizedClientServiceReactiveOAuth2AuthorizedClientManager(
+        clientRegistrationRepository, clientService);
+
+    authorizedClientManager.setAuthorizedClientProvider(authorizedClientProvider);
+    return authorizedClientManager;
+  }
 }
