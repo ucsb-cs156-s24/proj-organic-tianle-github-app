@@ -29,6 +29,7 @@ import edu.ucsb.cs156.organic.errors.EntityNotFoundException;
 import org.springframework.security.access.AccessDeniedException;
 
 import com.tianleyu.github.GitHubApp;
+import com.tianleyu.github.GitHubAppOrg;
 import com.tianleyu.github.JwtProvider;
 import org.kohsuke.github.GitHub;
 
@@ -74,25 +75,24 @@ public class CoursesController extends ApiController {
         }
     }
 
-    @Operation(summary= "Get a single course by id")
+    @Operation(summary = "Get a single course by id")
     @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     @GetMapping("/get")
     public Course getById(
-            @Parameter(name="id") @RequestParam Long id) {
+            @Parameter(name = "id") @RequestParam Long id) {
         User u = getCurrentUser().getUser();
 
         Course course = courseRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(Course.class, id));
-        
-        if(!u.isAdmin()){
-                courseStaffRepository.findByCourseIdAndGithubId(id, u.getGithubId())
-                        .orElseThrow(() -> new AccessDeniedException(
-                String.format("User %s is not authorized to get course %d", u.getGithubLogin(), id)));
-        }
 
-        log.warn("\u001b[31m" + gitHubApp.appInfo() + "\u001b[0m");
+        if (!u.isAdmin()) {
+            courseStaffRepository.findByCourseIdAndGithubId(id, u.getGithubId())
+                    .orElseThrow(() -> new AccessDeniedException(
+                            String.format("User %s is not authorized to get course %d",
+                                    u.getGithubLogin(), id)));
+        }
         return course;
-}
+    }
 
     @Operation(summary = "Create a new course")
     @PreAuthorize("hasAnyRole('ROLE_ADMIN','ROLE_INSTRUCTOR')")
@@ -173,13 +173,13 @@ public class CoursesController extends ApiController {
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     @DeleteMapping("/staff")
     public Object deleteStaff(
-        @Parameter(name = "id") @RequestParam Long id) {
+            @Parameter(name = "id") @RequestParam Long id) {
         Staff staff = courseStaffRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(Staff.class, id.toString()));
 
-                courseStaffRepository.delete(staff);
-                return genericMessage("Staff with id %s is deleted".formatted(id));
-        }
+        courseStaffRepository.delete(staff);
+        return genericMessage("Staff with id %s is deleted".formatted(id));
+    }
 
     @Operation(summary = "Update information for a course")
     // allow for roles of ADMIN or INSTRUCTOR but only if the user is a staff member

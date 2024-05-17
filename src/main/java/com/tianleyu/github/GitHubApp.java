@@ -7,9 +7,9 @@ import java.net.http.HttpResponse;
 
 import org.springframework.web.client.HttpClientErrorException;
 
-
 import java.time.temporal.*;
 import java.time.Duration; // Add this import statement
+import org.json.*;
 
 public class GitHubApp {
     private JwtProvider jwtProvider;
@@ -27,6 +27,14 @@ public class GitHubApp {
         } catch (HttpClientErrorException e) {
             return e.getMessage();
         }
+    }
+
+    public GitHubAppOrg org(String org) throws GitHubAppException {
+        HttpResponse<String> resp = get("/orgs/" + org + "/installation");
+        if (resp.statusCode() != 200) {
+            throw new GitHubAppException("Organization not found");
+        }
+        return new GitHubAppOrg(this, org);
     }
 
     public HttpResponse<String> get(String url)
