@@ -189,7 +189,40 @@ describe("CoursesEditPage tests", () => {
 
         });
 
-       
+        test("Yes Github App tips!", async () => {
+            axiosMock.onGet("/api/courses/github", { params: { id: 17 } }).reply(200, {
+                githubAppInstalled: false
+            });
+            render(
+                <QueryClientProvider client={queryClient}>
+                    <MemoryRouter>
+                        <CoursesEditPage />
+                    </MemoryRouter>
+                </QueryClientProvider>
+            );
+    
+            await screen.findByTestId("CourseEdit-githubAppTips");
+    
+            expect(axiosMock.history.get.length).toBeGreaterThanOrEqual(2); // times called
+            const githubAppTips = screen.getByTestId("CourseEdit-githubAppTips");
+            expect(githubAppTips).toBeInTheDocument();
+        });
+    
+        test("No Github App tips!", async () => {
+            axiosMock.onGet("/api/courses/github", { params: { id: 17 } }).reply(200, {
+                githubAppInstalled: true
+            });
+            render(
+                <QueryClientProvider client={queryClient}>
+                    <MemoryRouter>
+                        <CoursesEditPage />
+                    </MemoryRouter>
+                </QueryClientProvider>
+            );
+            await screen.findByTestId("CoursesForm-name");
+            expect(screen.queryByTestId("CourseEdit-githubAppTips")).not.toBeInTheDocument();
+        });
+
+
     });
 });
-
