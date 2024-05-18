@@ -386,8 +386,8 @@ public class CoursesController extends ApiController {
         // Check roster here
 
         // Send org Invitation
-        GitHubAppOrg org = gitHubApp.org(targetCourse.getGithubOrg());
         try {
+            GitHubAppOrg org = gitHubApp.org(targetCourse.getGithubOrg());
             String res = org.inviteUserToThisOrg(u.getGithubId());
             log.info("\u001B[33m" + res + "\u001B[0m");
         } catch (Exception e) {
