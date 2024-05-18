@@ -31,6 +31,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import edu.ucsb.cs156.organic.errors.EntityNotFoundException;
+import edu.ucsb.cs156.organic.models.GeneralOperationResp;
 import edu.ucsb.cs156.organic.models.OrgStatus;
 import edu.ucsb.cs156.organic.entities.School;
 
@@ -329,7 +330,7 @@ public class CoursesController extends ApiController {
     @Operation(summary = "Join a course")
     @PreAuthorize("hasAnyRole('ROLE_ADMIN','ROLE_INSTRUCTOR', 'ROLE_USER')")
     @PostMapping("/join")
-    public String joinCourse(
+    public GeneralOperationResp joinCourse(
             @Parameter(name = "id", description = "for example ucsb-cs156-f23") @RequestParam long courseId)
             throws JsonProcessingException {
         Course targetCourse;
@@ -338,7 +339,7 @@ public class CoursesController extends ApiController {
         if (tempCourse.isPresent()) {
             targetCourse = tempCourse.get();
         } else {
-            return "Course not found";
+            throw new EntityNotFoundException(Course.class, courseId);
         }
         User u = getCurrentUser().getUser();
 
@@ -349,7 +350,7 @@ public class CoursesController extends ApiController {
         if (tempSchool.isPresent()) {
             s = tempSchool.get();
         } else {
-            return "School not found";
+            throw new EntityNotFoundException(School.class, targetCourse.getSchool());
         }
 
         String emailSufix = s.getAbbrev() + ".edu";
@@ -370,7 +371,7 @@ public class CoursesController extends ApiController {
         }
 
         if (!found) {
-            return "User does not have a school email";
+            throw new AccessDeniedException("User does not have a school email");
         }
 
         String netId = schoolEmail.split("@")[0];
@@ -379,7 +380,7 @@ public class CoursesController extends ApiController {
                 .orElse(null);
 
         if (stu != null) {
-            return "User is already in the course";
+            throw new AccessDeniedException("User is already in the course");
         }
 
         // Check roster here
@@ -391,7 +392,7 @@ public class CoursesController extends ApiController {
             log.info("\u001B[33m" + res + "\u001B[0m");
         } catch (Exception e) {
             log.error(e.toString());
-            return "Failed to invite user to org. Is this user already in the org?";
+            throw new AccessDeniedException("Failed to invite user to org. Is this user already in the org?");
         }
 
         // Store in db
@@ -403,7 +404,7 @@ public class CoursesController extends ApiController {
                 .build();
 
         studentRepository.save(student);
-        return "OK";
+        return GeneralOperationResp.builder().success(true).message("Joined Successfully").build();
     }
 
 }

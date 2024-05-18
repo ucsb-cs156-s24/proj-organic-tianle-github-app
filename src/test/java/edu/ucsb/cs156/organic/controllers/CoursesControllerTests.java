@@ -60,6 +60,7 @@ import edu.ucsb.cs156.organic.entities.Staff;
 import edu.ucsb.cs156.organic.entities.Student;
 import edu.ucsb.cs156.organic.entities.User;
 import edu.ucsb.cs156.organic.entities.jobs.Job;
+import edu.ucsb.cs156.organic.models.GeneralOperationResp;
 import edu.ucsb.cs156.organic.models.OrgStatus;
 import edu.ucsb.cs156.organic.repositories.CourseRepository;
 import edu.ucsb.cs156.organic.repositories.SchoolRepository;
@@ -985,7 +986,7 @@ public class CoursesControllerTests extends ControllerTestCase {
                 .build();
         when(courseRepository.findById(eq(1L))).thenReturn(Optional.of(course1));
         when(gitHubApp.org(anyString())).thenReturn(null);
-        when(courseStaffRepository.findByCourseIdAndGithubId(any(),any())).thenReturn(Optional.of(courseStaff1));
+        when(courseStaffRepository.findByCourseIdAndGithubId(any(), any())).thenReturn(Optional.of(courseStaff1));
 
         // act
         MvcResult response = mockMvc.perform(get("/api/courses/github?id=1"))
@@ -1021,7 +1022,7 @@ public class CoursesControllerTests extends ControllerTestCase {
         User currentUser = currentUserService.getCurrentUser().getUser();
 
         when(courseRepository.findById(eq(course1.getId()))).thenReturn(Optional.of(course1));
-        when(courseStaffRepository.findByCourseIdAndGithubId(any(),any())).thenReturn(Optional.empty());
+        when(courseStaffRepository.findByCourseIdAndGithubId(any(), any())).thenReturn(Optional.empty());
 
         // act
         mockMvc.perform(get("/api/courses/github?id=1"))
@@ -1122,8 +1123,10 @@ public class CoursesControllerTests extends ControllerTestCase {
 
         verify(courseRepository, times(1)).findById(eq(1L));
         verify(studentRepository, times(1)).save(any(Student.class));
+        String expectedJson = mapper.writeValueAsString(
+                GeneralOperationResp.builder().success(true).message("Joined Successfully").build());
         String responseString = response.getResponse().getContentAsString();
-        assertEquals("OK", responseString);
+        assertEquals(expectedJson, responseString);
     }
 
     @WithMockUser(roles = { "USER" })
@@ -1151,7 +1154,7 @@ public class CoursesControllerTests extends ControllerTestCase {
 
         MvcResult response = mockMvc.perform(post("/api/courses/join?courseId=1")
                 .with(csrf()))
-                .andExpect(status().isOk()).andReturn();
+                .andExpect(status().isNotFound()).andReturn();
 
         verify(courseRepository, times(1)).findById(eq(1L));
         String responseString = response.getResponse().getContentAsString();
@@ -1183,11 +1186,15 @@ public class CoursesControllerTests extends ControllerTestCase {
 
         MvcResult response = mockMvc.perform(post("/api/courses/join?courseId=1")
                 .with(csrf()))
-                .andExpect(status().isOk()).andReturn();
+                .andExpect(status().isForbidden()).andReturn();
 
         verify(courseRepository, times(1)).findById(eq(1L));
-        String responseString = response.getResponse().getContentAsString();
-        assertEquals("User is already in the course", responseString);
+        Map<String, String> responseMap = mapper.readValue(response.getResponse().getContentAsString(),
+                new TypeReference<Map<String, String>>() {
+                });
+        Map<String, String> expectedMap = Map.of("message", "User is already in the course", "type",
+                "AccessDeniedException");
+        assertEquals(expectedMap, responseMap);
     }
 
     @WithMockUser(roles = { "USER" })
@@ -1217,11 +1224,16 @@ public class CoursesControllerTests extends ControllerTestCase {
 
         MvcResult response = mockMvc.perform(post("/api/courses/join?courseId=1")
                 .with(csrf()))
-                .andExpect(status().isOk()).andReturn();
+                .andExpect(status().isForbidden()).andReturn();
 
         verify(courseRepository, times(1)).findById(eq(1L));
-        String responseString = response.getResponse().getContentAsString();
-        assertEquals("Failed to invite user to org. Is this user already in the org?", responseString);
+        Map<String, String> responseMap = mapper.readValue(response.getResponse().getContentAsString(),
+                new TypeReference<Map<String, String>>() {
+                });
+        Map<String, String> expectedMap = Map.of("message",
+                "Failed to invite user to org. Is this user already in the org?", "type",
+                "AccessDeniedException");
+        assertEquals(expectedMap, responseMap);
     }
 
     @WithMockUser(roles = { "USER" })
@@ -1249,11 +1261,15 @@ public class CoursesControllerTests extends ControllerTestCase {
 
         MvcResult response = mockMvc.perform(post("/api/courses/join?courseId=1")
                 .with(csrf()))
-                .andExpect(status().isOk()).andReturn();
+                .andExpect(status().isNotFound()).andReturn();
 
         verify(courseRepository, times(1)).findById(eq(1L));
-        String responseString = response.getResponse().getContentAsString();
-        assertEquals("Course not found", responseString);
+        Map<String, String> responseMap = mapper.readValue(response.getResponse().getContentAsString(),
+                new TypeReference<Map<String, String>>() {
+                });
+        Map<String, String> expectedMap = Map.of("message", "Course not found", "type",
+                "EntityNotFoundException");
+        assertEquals(expectedMap, responseMap);
     }
 
     @WithMockUser(roles = { "USER" })
@@ -1281,10 +1297,14 @@ public class CoursesControllerTests extends ControllerTestCase {
 
         MvcResult response = mockMvc.perform(post("/api/courses/join?courseId=1")
                 .with(csrf()))
-                .andExpect(status().isOk()).andReturn();
+                .andExpect(status().isNotFound()).andReturn();
 
         verify(courseRepository, times(1)).findById(eq(1L));
-        String responseString = response.getResponse().getContentAsString();
-        assertEquals("School not found", responseString);
+        Map<String, String> responseMap = mapper.readValue(response.getResponse().getContentAsString(),
+                new TypeReference<Map<String, String>>() {
+                });
+        Map<String, String> expectedMap = Map.of("message", "School not found", "type",
+                "EntityNotFoundException");
+        assertEquals(expectedMap, responseMap);
     }
 }
