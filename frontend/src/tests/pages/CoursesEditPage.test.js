@@ -202,6 +202,8 @@ describe("CoursesEditPage tests", () => {
             );
     
             await screen.findByTestId("CourseEdit-githubAppTips");
+
+            expect(screen.getByTestId("CourseEdit-githubAppTips")).toHaveStyle("color: red");
     
             expect(axiosMock.history.get.length).toBeGreaterThanOrEqual(2); // times called
             const githubAppTips = screen.getByTestId("CourseEdit-githubAppTips");
