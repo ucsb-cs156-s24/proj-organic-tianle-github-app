@@ -7,17 +7,11 @@ import lombok.Builder;
 import lombok.AccessLevel;
 
 
-import org.springframework.security.core.GrantedAuthority;
-
-import edu.ucsb.cs156.organic.entities.User;
-
-import java.util.Collection;
-
 @Data
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
 public class OrgStatus {
-  private User user;
-  private Collection<? extends GrantedAuthority> roles;
+  private String org;
+  private boolean githubAppInstalled;
 }

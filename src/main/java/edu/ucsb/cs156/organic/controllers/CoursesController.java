@@ -27,6 +27,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import edu.ucsb.cs156.organic.errors.EntityNotFoundException;
+import edu.ucsb.cs156.organic.models.OrgStatus;
+
 import org.springframework.security.access.AccessDeniedException;
 
 import com.tianleyu.github.GitHubApp;
@@ -104,7 +106,7 @@ public class CoursesController extends ApiController {
     @Operation(summary = "Get GitHub App status")
     @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     @GetMapping("/github")
-    public Course getGithubOrgById(
+    public OrgStatus getGithubOrgById(
             @Parameter(name = "id") @RequestParam Long id) {
         User u = getCurrentUser().getUser();
 
@@ -121,9 +123,15 @@ public class CoursesController extends ApiController {
         try {
             GitHubAppOrg org = gitHubApp.org(githubOrg);
         } catch (Exception e) {
-            log.error("Error getting org: {}", e);
+            return OrgStatus.builder()
+                    .org(githubOrg)
+                    .githubAppInstalled(false)
+                    .build();
         }
-        return course;
+        return OrgStatus.builder()
+                .org(githubOrg)
+                .githubAppInstalled(true)
+                .build();
     }
 
     @Operation(summary = "Create a new course")
@@ -277,6 +285,22 @@ public class CoursesController extends ApiController {
 
         courseRepository.delete(course);
         return course;
+    }
+
+    @Operation(summary = "Join a course")
+    @PreAuthorize("hasAnyRole('ROLE_ADMIN','ROLE_INSTRUCTOR', 'ROLE_USER')")
+    @PostMapping("/join")
+    public String joinCourse(
+            @Parameter(name = "id", description = "for example ucsb-cs156-f23") @RequestParam long courseId)
+            throws JsonProcessingException {
+
+        Course targetCourse = courseRepository.findById(courseId)
+                .orElseThrow(() -> new EntityNotFoundException(Course.class, courseId));
+        User u = getCurrentUser().getUser();
+
+        // Check if user already in the course
+
+        return "OK";
     }
 
 }
