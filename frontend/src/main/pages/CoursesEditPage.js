@@ -76,7 +76,7 @@ export default function CoursesEditPage({ storybook = false }) {
         <h1>Edit Course</h1>
         {
           githubStatus && githubStatus.githubAppInstalled === false &&
-          <p style={{ color: "red" }}>Your GitHub Organization doesn't have our GitHub App installed, please follow the instruction <a href="/githubApp.html">here</a></p>
+          <p data-testid="CourseEdit-githubAppTips" style={{ color: "red" }}>Your GitHub Organization doesn't have our GitHub App installed, please follow the instruction <a href="/githubApp.html">here</a></p>
         }
         {
           course && <CoursesForm initialContents={course} submitAction={onSubmit} buttonLabel="Update" />

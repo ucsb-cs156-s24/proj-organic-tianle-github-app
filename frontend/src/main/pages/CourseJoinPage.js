@@ -1,36 +1,56 @@
 import BasicLayout from "main/layouts/BasicLayout/BasicLayout";
 import { Navigate } from 'react-router-dom'
 import { toast } from "react-toastify";
-import { useEffect, useState } from "react";
 import { useParams } from 'react-router-dom';
 import { Button } from 'react-bootstrap';
-import axios from "axios";
+import { useBackend, useBackendMutation } from "main/utils/useBackend";
 
 export default function CoursesCreatePage({ storybook = false }) {
 
     let { id } = useParams();
-    const [courseInfo, setCourseInfo] = useState(null);
-    const [redirectTo, setRedirectTo] = useState(null);
 
-    useEffect(() => {
-        // Stryker disable all: this is for storybook
-        if (storybook) {
-            setCourseInfo({
-                "id": 1,
-                "name": "Story Test",
-                "school": "UCSB",
-                "term": "S24",
-                "startDate": "1212-12-12T00:12:00",
-                "endDate": "1213-12-12T00:12:00",
-                "githubOrg": "ucsb-cs-dev"
-            })
-            return;
-        }
-        // Stryker restore all
-        axios.get(`/api/courses/join?id=${id}`).then((ci) => {
-            setCourseInfo(ci.data)
-        }).catch(_ => { })
-    }, [])
+
+    const { data: courseInfo, __error, __status } =
+        useBackend(
+            // Stryker disable next-line all : don't test internal caching of React Query
+            [`/api/courses/join?id=${id}`],
+            {  // Stryker disable next-line all : GET is the default, so changing this to "" doesn't introduce a bug
+                method: "GET",
+                url: `/api/courses/join`,
+                params: {
+                    id
+                }
+            }
+        );
+
+    const objectToAxiosPutParams = (_course) => ({
+        url: "/api/courses/join",
+        method: "POST",
+        params: {
+            courseId: id
+        },
+    });
+
+    const onSuccess = (_course) => {
+        toast(`Joined successfully`);
+    }
+
+    const mutation = useBackendMutation(
+        objectToAxiosPutParams,
+        { onSuccess },
+        // Stryker disable next-line all : hard to set up test for caching
+        [`/api/courses/join?courseId=${id}`]
+    );
+
+    const { isSuccess } = mutation
+
+    const onSubmit = async (_data) => {
+        mutation.mutate({});
+    }
+
+    if (isSuccess && !storybook) {
+        return <Navigate to="/courses" />
+    }
 
     return (
         <BasicLayout>
@@ -40,21 +60,13 @@ export default function CoursesCreatePage({ storybook = false }) {
                 {
                     courseInfo && (<>
                         <h3>Are you sure you want to join this course?</h3>
-                        <p>Course school: {courseInfo.school}</p>
+                        <p data-testid="CourseJoin-school">Course school: {courseInfo.school}</p>
                         <p>Course term: {courseInfo.term}</p>
                         <p>Course name: {courseInfo.name}</p>
-                        <Button variant="primary" onClick={() => {
-                            axios.post(`/api/courses/join?courseId=${id}`).then(() => {
-                                toast.success("Course joined")
-                                setRedirectTo("/courses")
-                            }).catch(e => toast.error("Error joining course:" + e.response.data.message))
-                        }} style={{ marginRight: 20 }}>Join</Button>
+                        <Button variant="primary" onClick={onSubmit} style={{ marginRight: 20 }}>Join</Button>
                     </>)
                 }
-                <Button variant="secondary" onClick={() => { setRedirectTo("/courses") }}>Cancel</Button>
-                {
-                    redirectTo && <Navigate to={redirectTo} />
-                }
+                {/* <Button variant="secondary" onClick={() => { setRedirectTo("/courses") }}>Cancel</Button> */}
             </div>
         </BasicLayout>
     )
