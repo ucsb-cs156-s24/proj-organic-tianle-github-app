@@ -13,7 +13,7 @@ import org.json.*;
 
 public class GitHubApp {
     private JwtProvider jwtProvider;
-    private  HttpClient client;
+    HttpClient client;
 
     public GitHubApp(String appId, String pkFile) {
         jwtProvider = new JwtProvider(appId, pkFile);

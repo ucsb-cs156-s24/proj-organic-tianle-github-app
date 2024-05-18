@@ -31,6 +31,8 @@ import org.springframework.security.access.AccessDeniedException;
 
 import com.tianleyu.github.GitHubApp;
 import com.tianleyu.github.GitHubAppOrg;
+import com.tianleyu.github.GitHubToken;
+import com.tianleyu.github.GitHubUserApi;
 import com.tianleyu.github.JwtProvider;
 import org.kohsuke.github.GitHub;
 
@@ -60,7 +62,7 @@ public class CoursesController extends ApiController {
     GitHubApp gitHubApp;
 
     @Autowired
-    ReactiveOAuth2AuthorizedClientManager authorizedClientManager;
+    GitHubToken accessToken;
 
     @Operation(summary = "List all courses")
     @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
@@ -68,7 +70,10 @@ public class CoursesController extends ApiController {
     public Iterable<Course> allCourses() {
         User u = getCurrentUser().getUser();
         log.info("u={}", u);
-
+        log.warn("\u001B[33mTOKENTOTOKEN " + accessToken.getToken() + "\u001B[0m");
+        log.warn("\u001B[33mGetting User Emails\u001B[0m");
+        GitHubUserApi ghUser = new GitHubUserApi(accessToken);
+        log.warn("\u001B[33m"+ghUser.userEmails().toString()+"\u001B[0m");
         if (u.isAdmin()) {
             return courseRepository.findAll();
         } else {

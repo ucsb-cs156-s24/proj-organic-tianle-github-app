@@ -136,19 +136,4 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     return filterRegistrationBean;
   }
 
-  @Bean
-  public ReactiveOAuth2AuthorizedClientManager authorizedClientManager(
-      final ReactiveClientRegistrationRepository clientRegistrationRepository,
-      final ReactiveOAuth2AuthorizedClientService clientService) {
-    ReactiveOAuth2AuthorizedClientProvider authorizedClientProvider = ReactiveOAuth2AuthorizedClientProviderBuilder
-        .builder()
-        .clientCredentials()
-        .build();
-
-    AuthorizedClientServiceReactiveOAuth2AuthorizedClientManager authorizedClientManager = new AuthorizedClientServiceReactiveOAuth2AuthorizedClientManager(
-        clientRegistrationRepository, clientService);
-
-    authorizedClientManager.setAuthorizedClientProvider(authorizedClientProvider);
-    return authorizedClientManager;
-  }
 }
