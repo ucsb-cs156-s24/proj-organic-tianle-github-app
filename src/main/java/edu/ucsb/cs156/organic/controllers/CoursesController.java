@@ -324,6 +324,7 @@ public class CoursesController extends ApiController {
     @Operation(summary = "Join a course")
     @PreAuthorize("hasAnyRole('ROLE_ADMIN','ROLE_INSTRUCTOR', 'ROLE_USER')")
     @PostMapping("/join")
+    @ExcludeFromJacocoGeneratedReport
     public String joinCourse(
             @Parameter(name = "id", description = "for example ucsb-cs156-f23") @RequestParam long courseId)
             throws JsonProcessingException {

@@ -1,6 +1,5 @@
 import BasicLayout from "main/layouts/BasicLayout/BasicLayout";
 import { Navigate } from 'react-router-dom'
-import { useBackendMutation } from "main/utils/useBackend";
 import { toast } from "react-toastify";
 import { useEffect, useState } from "react";
 import { useParams } from 'react-router-dom';
@@ -30,7 +29,7 @@ export default function CoursesCreatePage({ storybook = false }) {
         // Stryker restore all
         axios.get(`/api/courses/join?id=${id}`).then((ci) => {
             setCourseInfo(ci.data)
-        }).catch(_ => toast.error("Error loading course info"))
+        }).catch(_ => { toast.error("Error loading course info") })
     }, [])
 
     return (

@@ -4,6 +4,7 @@ import { MemoryRouter } from "react-router-dom";
 import CoursesEditPage from "main/pages/CoursesEditPage";
 import { apiCurrentUserFixtures } from "fixtures/currentUserFixtures";
 import { systemInfoFixtures } from "fixtures/systemInfoFixtures";
+import { coursesFixtures } from "fixtures/coursesFixtures";
 import axios from "axios";
 import AxiosMockAdapter from "axios-mock-adapter";
 
@@ -48,7 +49,7 @@ describe("CoursesEditPage tests", () => {
             axiosMock.resetHistory();
             axiosMock.onGet("/api/currentUser").reply(200, apiCurrentUserFixtures.userOnly);
             axiosMock.onGet("/api/systemInfo").reply(200, systemInfoFixtures.showingNeither);
-            axiosMock.onGet("/api/courses/get", { params: { id: 17 } }).timeout();
+            axiosMock.onGet("/api/courses/get", { params: { id: 17 } }).reply(200, coursesFixtures.oneCourse);
         });
 
         const queryClient = new QueryClient();

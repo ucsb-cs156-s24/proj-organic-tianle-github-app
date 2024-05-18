@@ -10,6 +10,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.awaitility.Awaitility.await;
 
@@ -25,6 +26,7 @@ import java.util.Optional;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tianleyu.github.GitHubApp;
+import com.tianleyu.github.GitHubAppException;
 import com.tianleyu.github.GitHubToken;
 
 import org.junit.jupiter.api.Test;
@@ -49,10 +51,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 
 import edu.ucsb.cs156.organic.entities.Course;
+import edu.ucsb.cs156.organic.entities.School;
 import edu.ucsb.cs156.organic.entities.Staff;
 import edu.ucsb.cs156.organic.entities.User;
 import edu.ucsb.cs156.organic.entities.jobs.Job;
+import edu.ucsb.cs156.organic.models.OrgStatus;
 import edu.ucsb.cs156.organic.repositories.CourseRepository;
+import edu.ucsb.cs156.organic.repositories.SchoolRepository;
 import edu.ucsb.cs156.organic.repositories.StaffRepository;
 import edu.ucsb.cs156.organic.repositories.UserRepository;
 import edu.ucsb.cs156.organic.repositories.jobs.JobsRepository;
@@ -79,6 +84,9 @@ public class CoursesControllerTests extends ControllerTestCase {
 
     @MockBean
     StaffRepository courseStaffRepository;
+
+    @MockBean
+    SchoolRepository schoolRepository;
 
     @MockBean
     GitHubApp gitHubApp;
@@ -932,4 +940,109 @@ public class CoursesControllerTests extends ControllerTestCase {
                 "AccessDeniedException");
         assertEquals(expectedMap, responseMap);
     }
+
+    @WithMockUser(roles = { "ADMIN" })
+    @Test
+    public void admin_can_query_github_app_status() throws Exception{
+        // arrange
+        when(courseRepository.findById(eq(1L))).thenReturn(Optional.of(course1));
+        when(gitHubApp.org(anyString())).thenReturn(null);
+
+        // act
+        MvcResult response = mockMvc.perform(get("/api/courses/github?id=1"))
+                .andExpect(status().isOk()).andReturn();
+
+        // assert
+        verify(courseRepository, times(1)).findById(eq(1L));
+        verify(gitHubApp, times(1)).org(eq("ucsb-cs156-f23"));
+
+        OrgStatus o = OrgStatus.builder().org("ucsb-cs156-f23").githubAppInstalled(true).build();
+        
+        String expectedJson = mapper.writeValueAsString(o);
+        String responseString = response.getResponse().getContentAsString();
+        assertEquals(expectedJson, responseString);
+    }
+
+    @WithMockUser(roles = { "USER" })
+    @Test
+    public void user_can_not_query_github_app_status() throws Exception{
+        // arrange
+        when(courseRepository.findById(eq(1L))).thenReturn(Optional.of(course1));
+        when(gitHubApp.org(anyString())).thenReturn(null);
+
+        // act
+        MvcResult response = mockMvc.perform(get("/api/courses/github?id=1"))
+                .andExpect(status().isForbidden()).andReturn();
+    }
+
+    @WithMockUser(roles = { "USER" })
+    @Test
+    public void admin_can_query_github_app_status_that_dne() throws Exception{
+        // arrange
+        when(courseRepository.findById(eq(1L))).thenReturn(Optional.empty());
+        when(gitHubApp.org(anyString())).thenReturn(null);
+
+        // act
+        MvcResult response = mockMvc.perform(get("/api/courses/github?id=1"))
+                .andExpect(status().isNotFound()).andReturn();
+    }
+
+    @WithMockUser(roles = { "ADMIN" })
+    @Test
+    public void admin_can_query_github_app_status_not_linked() throws Exception{
+        // arrange
+        when(courseRepository.findById(eq(1L))).thenReturn(Optional.of(course1));
+        when(gitHubApp.org(anyString())).thenThrow(new GitHubAppException("ucsb-cs156-f23"));
+
+        // act
+        MvcResult response = mockMvc.perform(get("/api/courses/github?id=1"))
+                .andExpect(status().isOk()).andReturn();
+
+        // assert
+        verify(courseRepository, times(1)).findById(eq(1L));
+        verify(gitHubApp, times(1)).org(eq("ucsb-cs156-f23"));
+
+        OrgStatus o = OrgStatus.builder().org("ucsb-cs156-f23").githubAppInstalled(false).build();
+        
+        String expectedJson = mapper.writeValueAsString(o);
+        String responseString = response.getResponse().getContentAsString();
+        assertEquals(expectedJson, responseString);
+    }
+
+    @WithMockUser(roles = { "USER" })
+    @Test
+    public void user_can_get_join_info() throws Exception{
+
+        when(courseRepository.findById(eq(course1.getId()))).thenReturn(Optional.of(course1));
+
+        // act
+        MvcResult response = mockMvc.perform(get("/api/courses/join?id=1"))
+                .andExpect(status().isOk()).andReturn();
+        // assert
+        verify(courseRepository, times(1)).findById(eq(1L));
+        String expectedJson = mapper.writeValueAsString(course1);
+        String responseString = response.getResponse().getContentAsString();
+        assertEquals(expectedJson, responseString);
+    }
+
+
+//     @WithMockUser(roles = { "USER" })
+//     @Test
+//     public void user_can_join_course() throws Exception{
+
+//         User currentUser = currentUserService.getCurrentUser().getUser();
+//         School s1 = School.builder().name("UCSB").abbrev("ucsb").build();
+
+//         when(courseRepository.findById(eq(course1.getId()))).thenReturn(Optional.of(course1));
+//         when(schoolRepository.findByName(eq("UCSB"))).thenReturn(Optional.of(s1));
+
+//         // act
+//         MvcResult response = mockMvc.perform(post("/api/courses/join?id=1"))
+//                 .andExpect(status().isOk()).andReturn();
+//         // assert
+//         verify(courseRepository, times(1)).findById(eq(1L));
+//         String expectedJson = mapper.writeValueAsString(course1);
+//         String responseString = response.getResponse().getContentAsString();
+//         assertEquals(expectedJson, responseString);
+//     }
 }
