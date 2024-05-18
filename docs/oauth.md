@@ -1,6 +1,6 @@
 # OAuth Setup
 
-This Spring Boot application is set up to use Github OAuth as it's authentication scheme.
+This Spring Boot application is set up to use **Github App** as it's authentication scheme (please note the **Github Oauth** client will NOT work for some of the features).
 
 Setting this up on localhost requires the first two steps below; getting this to work on Dokku requires additional 
 steps.
@@ -14,6 +14,25 @@ Instructions for setting up Github OAuth can be found here:
 1. Obtaining a Github *client id* and *client secret*, which is described here: 
    * <https://github.com/ucsb-cs156/ucsb-cs156.github.io/blob/main/topics/oauth/oauth_github_setup.md>
 2. Configuring the `.env` file with these values.
+
+3. In addition to this, please go to the private key part, and generate a private key for this app.
+    1. Download the key from github
+    2. Save it under the the root directory of this project as `<name>.pem`
+    3. Run `./convertKey.sh <name>.pem` to get a key in the java format, will will be saved as `<name>.pem.der`.
+    4. Rename it to `.github.pk.der`
+    5. Remove the `<name>.pem` file
+
+Please note that things gets a little bit different in the production environment.
+
+### Private key in production
+
+*Precondition: You have your `.github.pk.der` generated*
+
+1. Make a new directory on your dokku server, preferably under your home directory, name it `<dir>` (you pick), and copy the `.github.pk.der` file to this directory.
+2. Run `dokku storage:mount <your-app> <absolute-path-to-the-dir-you-created>:/app`. You can use the command `pwd` to see the absolute path.
+3. Use `dokku storage:list <your-app>` to see if it's mounted.
+4. Run `dokku config:set <your-app> --no-restart GITHUB_PKFILE=/app/.github.pk.der` to set the environment variable.
+5. Run `dokku ps:rebuild <your-app>` to restart the app.
 
 
 # About the `.env` and `.env.SAMPLE` files.
