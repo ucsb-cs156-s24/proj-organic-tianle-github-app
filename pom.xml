@@ -224,6 +224,7 @@
                         <exclude>**/edu/ucsb/cs156/organic/controllers/FrontendProxyController.*</exclude>
                         <exclude>**/edu/ucsb/cs156/organic/services/CurrentUserServiceImpl.*</exclude>
                         <exclude>**/edu/ucsb/cs156/organic/OrganicApplication.*</exclude>
+                        <exclude>**/edu/ucsb/cs156/organic/beans/OAuth2ClientBean.*</exclude><!-- This is internet code, I don't know how to test -->
                     </excludes>
                 </configuration>
                 <executions>
@@ -313,6 +314,8 @@
                         <param>edu.ucsb.cs156.organic.services.GrantedAuthoritiesService</param>
                         <param>edu.ucsb.cs156.organic.beans.GitHubAppBean</param><!-- Excluded due
                         to reasons similar to config classes above -->
+                        <param>edu.ucsb.cs156.organic.beans.OAuth2ClientBean</param><!-- Excluded due
+                            to reasons similar to config classes above -->
                     </excludedClasses>
                     <excludedTestClasses></excludedTestClasses>
                     <outputFormats>

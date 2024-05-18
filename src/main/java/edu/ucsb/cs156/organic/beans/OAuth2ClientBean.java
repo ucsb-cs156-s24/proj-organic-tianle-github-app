@@ -17,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 @Configuration
 @Slf4j
 public class OAuth2ClientBean {
+    // https://stackoverflow.com/questions/56533989/retrieving-the-access-token-of-a-oauth2-3-legged-authentication-using-spring-boo
 
     @Bean
     @RequestScope
