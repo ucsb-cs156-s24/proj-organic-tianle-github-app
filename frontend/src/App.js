@@ -35,6 +35,7 @@ function App() {
     <>
       <Route path="/profile" element={<ProfilePage />} />
       <Route path="/courses" element={<CourseIndexPage />} />
+      <Route path="/courses/join/:id" element={<CourseJoinPage />} />
     </>
   ) : null;
 
@@ -42,7 +43,6 @@ function App() {
     <>
       <Route path="/courses/create" element={<CoursesCreatePage />} />
       <Route path="/courses" element={<CourseIndexPage />} />
-      <Route path="/courses/join/:id" element={<CourseJoinPage />} />
       <Route path="/courses/edit/:id" element={<CoursesEditPage />} />
     </>
   ) : null;

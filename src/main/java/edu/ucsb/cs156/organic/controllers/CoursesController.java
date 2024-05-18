@@ -37,6 +37,7 @@ import edu.ucsb.cs156.organic.entities.School;
 import org.springframework.security.access.AccessDeniedException;
 
 import com.tianleyu.github.GitHubApp;
+import com.tianleyu.github.GitHubAppException;
 import com.tianleyu.github.GitHubAppOrg;
 import com.tianleyu.github.GitHubToken;
 import com.tianleyu.github.GitHubUserApi;
@@ -133,8 +134,10 @@ public class CoursesController extends ApiController {
         }
         String githubOrg = course.getGithubOrg();
         try {
+            log.error("QUERY FOR OGR: " + githubOrg);
             GitHubAppOrg org = gitHubApp.org(githubOrg);
         } catch (Exception e) {
+            log.error(e.toString());
             return OrgStatus.builder()
                     .org(githubOrg)
                     .githubAppInstalled(false)
@@ -299,6 +302,25 @@ public class CoursesController extends ApiController {
         return course;
     }
 
+    @Operation(summary = "Get a joinable info for a course")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
+    @GetMapping("/join")
+    public Course joinById(
+            @Parameter(name = "id") @RequestParam Long id) {
+        User u = getCurrentUser().getUser();
+
+        Course course = courseRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException(Course.class, id));
+
+        // if (!u.isAdmin()) {
+        // courseStaffRepository.findByCourseIdAndGithubId(id, u.getGithubId())
+        // .orElseThrow(() -> new AccessDeniedException(
+        // String.format("User %s is not authorized to get course %d",
+        // u.getGithubLogin(), id)));
+        // }
+        return course;
+    }
+
     @Operation(summary = "Join a course")
     @PreAuthorize("hasAnyRole('ROLE_ADMIN','ROLE_INSTRUCTOR', 'ROLE_USER')")
     @PostMapping("/join")
@@ -310,9 +332,10 @@ public class CoursesController extends ApiController {
                 .orElseThrow(() -> new EntityNotFoundException(Course.class, courseId));
         User u = getCurrentUser().getUser();
 
+        log.warn("\u001B[33mUSER JOINING THE COURSE\u001B[0m");
         log.warn("\u001B[33m" + u.getGithubLogin() + "\u001B[0m");
 
-        School s = schoolRepository.findById(targetCourse.getSchool())
+        School s = schoolRepository.findByName(targetCourse.getSchool())
                 .orElseThrow(() -> new EntityNotFoundException(School.class, targetCourse.getSchool()));
 
         String emailSufix = s.getAbbrev() + ".edu";
@@ -349,7 +372,13 @@ public class CoursesController extends ApiController {
 
         // Send org Invitation
         GitHubAppOrg org = gitHubApp.org(targetCourse.getGithubOrg());
-        org.inviteUserToThisOrg(u.getGithubLogin());
+        try {
+            String res = org.inviteUserToThisOrg(u.getGithubId());
+            log.info("\u001B[33m" + res + "\u001B[0m");
+        } catch (Exception e) {
+            log.error(e.toString());
+            throw new GitHubAppException("Failed to invite user to org. Is this user already in the org?");
+        }
 
         // Store in db
         Student student = Student.builder()
