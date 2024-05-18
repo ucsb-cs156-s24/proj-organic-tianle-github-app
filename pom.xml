@@ -312,10 +312,9 @@
                         <param>edu.ucsb.cs156.organic.config.SecurityConfig</param>
                         <param>edu.ucsb.cs156.organic.config.SecurityConfig.MyCsrfRequestMatcher</param>
                         <param>edu.ucsb.cs156.organic.services.GrantedAuthoritiesService</param>
-                        <param>edu.ucsb.cs156.organic.beans.GitHubAppBean</param><!-- Excluded due
-                        to reasons similar to config classes above -->
-                        <param>edu.ucsb.cs156.organic.beans.OAuth2ClientBean</param><!-- Excluded due
-                            to reasons similar to config classes above -->
+                        <param>edu.ucsb.cs156.organic.beans.GitHubAppBean</param><!-- Excluded due to reasons similar to config classes above -->
+                        <param>edu.ucsb.cs156.organic.beans.OAuth2ClientBean</param><!-- Excluded due to reasons similar to config classes above -->
+                        <param>edu.ucsb.cs156.organic.beans.*</param><!-- Excluded due to reasons similar to config classes above -->
                     </excludedClasses>
                     <excludedTestClasses></excludedTestClasses>
                     <outputFormats>
