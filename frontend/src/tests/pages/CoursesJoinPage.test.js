@@ -38,6 +38,29 @@ jest.mock('react-router-dom', () => {
 
 describe("CourseJoinPage tests", () => {
 
+    describe("Loading before backend returns", () => {
+        const axiosMock = new AxiosMockAdapter(axios);
+        const queryClient = new QueryClient();
+        beforeEach(() => {
+            axiosMock.reset();
+            axiosMock.resetHistory();
+            axiosMock.onGet("/api/currentUser").reply(200, apiCurrentUserFixtures.userOnly);
+            axiosMock.onGet("/api/systemInfo").reply(200, systemInfoFixtures.showingNeither);
+        });
+        test("Load data with backend info", async () => {
+            // const restoreConsole = mockConsole();
+            render(
+                <QueryClientProvider client={queryClient}>
+                    <MemoryRouter>
+                        <CourseJoinPage />
+                    </MemoryRouter>
+                </QueryClientProvider>
+            );
+            await screen.findByText("Loading")
+            // restoreConsole();
+        });
+    })
+
     describe("when the backend doesn't return data", () => {
 
         const axiosMock = new AxiosMockAdapter(axios);
@@ -87,6 +110,7 @@ describe("CourseJoinPage tests", () => {
 
             const submitButton = screen.getByText("Join")
             expect(submitButton).toBeInTheDocument();
+            expect(submitButton).toHaveStyle("margin-right: 20px")
             fireEvent.click(submitButton);
 
             await waitFor(() => expect(axiosMock.history.post.length).toBe(1));
