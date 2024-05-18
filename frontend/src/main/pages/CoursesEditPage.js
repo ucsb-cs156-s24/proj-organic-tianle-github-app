@@ -5,7 +5,7 @@ import { Navigate } from 'react-router-dom'
 import { useBackend, useBackendMutation } from "main/utils/useBackend";
 import { toast } from "react-toastify";
 
-export default function CoursesEditPage({storybook=false}) {
+export default function CoursesEditPage({ storybook = false }) {
   let { id } = useParams();
 
   const { data: course, _error, _status } =
@@ -15,6 +15,19 @@ export default function CoursesEditPage({storybook=false}) {
       {  // Stryker disable next-line all : GET is the default, so changing this to "" doesn't introduce a bug
         method: "GET",
         url: `/api/courses/get`,
+        params: {
+          id
+        }
+      }
+    );
+
+  const { data: githubStatus, __error, __status } =
+    useBackend(
+      // Stryker disable next-line all : don't test internal caching of React Query
+      [`/api/courses/github?id=${id}`],
+      {  // Stryker disable next-line all : GET is the default, so changing this to "" doesn't introduce a bug
+        method: "GET",
+        url: `/api/courses/github`,
         params: {
           id
         }
@@ -61,6 +74,10 @@ export default function CoursesEditPage({storybook=false}) {
     <BasicLayout>
       <div className="pt-2">
         <h1>Edit Course</h1>
+        {
+          githubStatus && githubStatus.githubAppInstalled === false &&
+          <p style={{ color: "red" }}>Your GitHub Organization doesn't have our GitHub App installed, please follow the instruction <a href="/githubApp.html">here</a></p>
+        }
         {
           course && <CoursesForm initialContents={course} submitAction={onSubmit} buttonLabel="Update" />
         }
