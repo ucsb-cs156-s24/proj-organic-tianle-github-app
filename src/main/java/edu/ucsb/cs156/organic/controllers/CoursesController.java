@@ -2,13 +2,17 @@ package edu.ucsb.cs156.organic.controllers;
 
 import edu.ucsb.cs156.organic.entities.Course;
 import edu.ucsb.cs156.organic.entities.Staff;
+import edu.ucsb.cs156.organic.entities.Student;
 import edu.ucsb.cs156.organic.entities.User;
 import edu.ucsb.cs156.organic.repositories.CourseRepository;
+import edu.ucsb.cs156.organic.repositories.SchoolRepository;
 import edu.ucsb.cs156.organic.repositories.StaffRepository;
+import edu.ucsb.cs156.organic.repositories.StudentRepository;
 import edu.ucsb.cs156.organic.repositories.UserRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import liquibase.pro.packaged.gh;
 import lombok.extern.slf4j.Slf4j;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -28,6 +32,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import edu.ucsb.cs156.organic.errors.EntityNotFoundException;
 import edu.ucsb.cs156.organic.models.OrgStatus;
+import edu.ucsb.cs156.organic.entities.School;
 
 import org.springframework.security.access.AccessDeniedException;
 
@@ -43,6 +48,7 @@ import java.time.LocalDateTime;
 import javax.transaction.Transactional;
 import javax.validation.Valid;
 
+import java.util.ArrayList;
 import java.util.Optional;
 
 @Tag(name = "Courses")
@@ -58,7 +64,13 @@ public class CoursesController extends ApiController {
     StaffRepository courseStaffRepository;
 
     @Autowired
+    SchoolRepository schoolRepository;
+
+    @Autowired
     UserRepository userRepository;
+
+    @Autowired
+    StudentRepository studentRepository;
 
     @Autowired
     GitHubApp gitHubApp;
@@ -298,8 +310,56 @@ public class CoursesController extends ApiController {
                 .orElseThrow(() -> new EntityNotFoundException(Course.class, courseId));
         User u = getCurrentUser().getUser();
 
-        // Check if user already in the course
+        log.warn("\u001B[33m" + u.getGithubLogin() + "\u001B[0m");
 
+        School s = schoolRepository.findById(targetCourse.getSchool())
+                .orElseThrow(() -> new EntityNotFoundException(School.class, targetCourse.getSchool()));
+
+        String emailSufix = s.getAbbrev() + ".edu";
+
+        GitHubUserApi ghUser = new GitHubUserApi(accessToken);
+        // log.warn("\u001B[33m"+ghUser.userEmails().toString()+"\u001B[0m");
+
+        ArrayList<String> emails = ghUser.userEmails();
+
+        boolean found = false;
+        String schoolEmail = "";
+        for (String email : emails) {
+            if (email.endsWith(emailSufix)) {
+                found = true;
+                schoolEmail = email;
+                break;
+            }
+        }
+
+        if (!found) {
+            return "User does not have a school email";
+        }
+
+        String netId = schoolEmail.split("@")[0];
+
+        Student stu = studentRepository.findByCourseIdAndStudentId(courseId, netId)
+                .orElse(null);
+
+        if (stu != null) {
+            return "User is already in the course";
+        }
+
+        // Check roster here
+
+        // Send org Invitation
+        GitHubAppOrg org = gitHubApp.org(targetCourse.getGithubOrg());
+        org.inviteUserToThisOrg(u.getGithubLogin());
+
+        // Store in db
+        Student student = Student.builder()
+                .courseId(courseId)
+                .studentId(netId)
+                .email(schoolEmail)
+                .githubId(u.getGithubId())
+                .build();
+
+        studentRepository.save(student);
         return "OK";
     }
 
