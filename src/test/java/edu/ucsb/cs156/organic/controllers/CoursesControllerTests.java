@@ -1154,11 +1154,15 @@ public class CoursesControllerTests extends ControllerTestCase {
 
         MvcResult response = mockMvc.perform(post("/api/courses/join?courseId=1")
                 .with(csrf()))
-                .andExpect(status().isNotFound()).andReturn();
+                .andExpect(status().isForbidden()).andReturn();
 
         verify(courseRepository, times(1)).findById(eq(1L));
-        String responseString = response.getResponse().getContentAsString();
-        assertEquals("User does not have a school email", responseString);
+        Map<String, String> responseMap = mapper.readValue(response.getResponse().getContentAsString(),
+                new TypeReference<Map<String, String>>() {
+                });
+        Map<String, String> expectedMap = Map.of("message", "User does not have a school email", "type",
+                "AccessDeniedException");
+        assertEquals(expectedMap, responseMap);
     }
 
     @WithMockUser(roles = { "USER" })
@@ -1267,7 +1271,7 @@ public class CoursesControllerTests extends ControllerTestCase {
         Map<String, String> responseMap = mapper.readValue(response.getResponse().getContentAsString(),
                 new TypeReference<Map<String, String>>() {
                 });
-        Map<String, String> expectedMap = Map.of("message", "Course not found", "type",
+        Map<String, String> expectedMap = Map.of("message", "Course with id 1 not found", "type",
                 "EntityNotFoundException");
         assertEquals(expectedMap, responseMap);
     }
@@ -1303,7 +1307,7 @@ public class CoursesControllerTests extends ControllerTestCase {
         Map<String, String> responseMap = mapper.readValue(response.getResponse().getContentAsString(),
                 new TypeReference<Map<String, String>>() {
                 });
-        Map<String, String> expectedMap = Map.of("message", "School not found", "type",
+        Map<String, String> expectedMap = Map.of("message", "School with id UCSB not found", "type",
                 "EntityNotFoundException");
         assertEquals(expectedMap, responseMap);
     }
