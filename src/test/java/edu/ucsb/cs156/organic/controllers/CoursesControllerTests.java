@@ -977,6 +977,33 @@ public class CoursesControllerTests extends ControllerTestCase {
 
     @WithMockUser(roles = { "USER" })
     @Test
+    public void user_can_query_github_app_status_if_is_staff() throws Exception {
+        // arrange
+        Staff courseStaff1 = Staff.builder()
+                .id(1L)
+                .courseId(course1.getId())
+                .build();
+        when(courseRepository.findById(eq(1L))).thenReturn(Optional.of(course1));
+        when(gitHubApp.org(anyString())).thenReturn(null);
+        when(courseStaffRepository.findByCourseIdAndGithubId(any(),any())).thenReturn(Optional.of(courseStaff1));
+
+        // act
+        MvcResult response = mockMvc.perform(get("/api/courses/github?id=1"))
+                .andExpect(status().isOk()).andReturn();
+
+        // assert
+        verify(courseRepository, times(1)).findById(eq(1L));
+        verify(gitHubApp, times(1)).org(eq("ucsb-cs156-f23"));
+
+        OrgStatus o = OrgStatus.builder().org("ucsb-cs156-f23").githubAppInstalled(true).build();
+
+        String expectedJson = mapper.writeValueAsString(o);
+        String responseString = response.getResponse().getContentAsString();
+        assertEquals(expectedJson, responseString);
+    }
+
+    @WithMockUser(roles = { "USER" })
+    @Test
     public void user_can_not_query_github_app_status() throws Exception {
         // arrange
         when(courseRepository.findById(eq(1L))).thenReturn(Optional.of(course1));
@@ -985,6 +1012,22 @@ public class CoursesControllerTests extends ControllerTestCase {
         // act
         MvcResult response = mockMvc.perform(get("/api/courses/github?id=1"))
                 .andExpect(status().isForbidden()).andReturn();
+    }
+
+    @WithMockUser(roles = { "USER" })
+    @Test
+    public void user_can_not_query_if_dne() throws Exception {
+        // arrange
+        User currentUser = currentUserService.getCurrentUser().getUser();
+
+        when(courseRepository.findById(eq(course1.getId()))).thenReturn(Optional.of(course1));
+        when(courseStaffRepository.findByCourseIdAndGithubId(any(),any())).thenReturn(Optional.empty());
+
+        // act
+        mockMvc.perform(get("/api/courses/github?id=1"))
+                .andExpect(status().isForbidden());
+
+        verify(courseRepository, times(1)).findById(eq(1L));
     }
 
     @WithMockUser(roles = { "USER" })
@@ -1083,7 +1126,6 @@ public class CoursesControllerTests extends ControllerTestCase {
         assertEquals("OK", responseString);
     }
 
-
     @WithMockUser(roles = { "USER" })
     @Test
     public void user_can_not_join_course_wo_school_email() throws Exception {
@@ -1172,7 +1214,6 @@ public class CoursesControllerTests extends ControllerTestCase {
 
         when(gitHubApp.org(anyString())).thenReturn(s);
         doReturn(emails).when(gitHubUserApi).userEmails();
-
 
         MvcResult response = mockMvc.perform(post("/api/courses/join?courseId=1")
                 .with(csrf()))

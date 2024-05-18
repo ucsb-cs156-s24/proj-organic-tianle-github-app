@@ -130,10 +130,12 @@ public class CoursesController extends ApiController {
                 .orElseThrow(() -> new EntityNotFoundException(Course.class, id));
 
         if (!u.isAdmin()) {
-            courseStaffRepository.findByCourseIdAndGithubId(id, u.getGithubId())
-                    .orElseThrow(() -> new AccessDeniedException(
-                            String.format("User %s is not authorized to get course %d",
-                                    u.getGithubLogin(), id)));
+            Optional<Staff> s = courseStaffRepository.findByCourseIdAndGithubId(id, u.getGithubId());
+            if (s.isEmpty()) {
+                throw new AccessDeniedException(
+                    String.format("User %s is not authorized to get course %d",
+                            u.getGithubLogin(), id));
+            }
         }
         String githubOrg = course.getGithubOrg();
         try {
