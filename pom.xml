@@ -46,6 +46,11 @@
             <artifactId>json</artifactId>
             <version>20240303</version>
         </dependency>
+        <dependency>
+            <groupId>com.tianleyu</groupId>
+            <artifactId>github</artifactId>
+            <version>0.0.1</version>
+        </dependency>
         <!-- <dependency>
         <groupId>org.powermock</groupId>
         <artifactId>powermock-module-junit4</artifactId>
@@ -219,10 +224,6 @@
                         <exclude>**/edu/ucsb/cs156/organic/controllers/FrontendProxyController.*</exclude>
                         <exclude>**/edu/ucsb/cs156/organic/services/CurrentUserServiceImpl.*</exclude>
                         <exclude>**/edu/ucsb/cs156/organic/OrganicApplication.*</exclude>
-                        <exclude>**/github/Utils.*</exclude><!-- Excluding since it's copied from
-                        the internet and hard to test -->
-                        <exclude>**/github/GitHubAppException.*</exclude> <!-- Excluding since it
-                        does not have any actual code -->
                     </excludes>
                 </configuration>
                 <executions>
@@ -297,11 +298,9 @@
                     <verbose>true</verbose>
                     <targetClasses>
                         <param>edu.ucsb.cs156.*</param>
-                        <param>com.tianleyu.github.*</param>
                     </targetClasses>
                     <targetTests>
                         <param>edu.ucsb.cs156.*</param>
-                        <param>com.tianleyu.github.*</param>
                     </targetTests>
                     <excludedClasses>
                         <param>edu.ucsb.cs156.organic.aop.LoggingAspect</param>
@@ -314,12 +313,6 @@
                         <param>edu.ucsb.cs156.organic.services.GrantedAuthoritiesService</param>
                         <param>edu.ucsb.cs156.organic.beans.GitHubAppBean</param><!-- Excluded due
                         to reasons similar to config classes above -->
-                        <param>com.tianleyu.github.Utils</param><!-- Excluding since it's copied
-                        from the internet and hard to test -->
-                        <param>com.tianleyu.github.GitHubAppException</param><!-- Excluding since it
-                        does not have any actual code -->
-                        <param>com.tianleyu.github.*</param><!-- Disabled for the wheels I build,
-                        will enable later -->
                     </excludedClasses>
                     <excludedTestClasses></excludedTestClasses>
                     <outputFormats>

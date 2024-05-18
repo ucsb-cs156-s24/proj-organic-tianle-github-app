@@ -71,10 +71,10 @@ public class CoursesController extends ApiController {
         User u = getCurrentUser().getUser();
         log.info("u={}", u);
         // This is how you use it
-        // log.warn("\u001B[33mTOKENTOTOKEN " + accessToken.getToken() + "\u001B[0m");
-        // log.warn("\u001B[33mGetting User Emails\u001B[0m");
-        // GitHubUserApi ghUser = new GitHubUserApi(accessToken);
-        // log.warn("\u001B[33m"+ghUser.userEmails().toString()+"\u001B[0m");
+        log.warn("\u001B[33mTOKENTOTOKEN " + accessToken.getToken() + "\u001B[0m");
+        log.warn("\u001B[33mGetting User Emails\u001B[0m");
+        GitHubUserApi ghUser = new GitHubUserApi(accessToken);
+        log.warn("\u001B[33m"+ghUser.userEmails().toString()+"\u001B[0m");
         if (u.isAdmin()) {
             return courseRepository.findAll();
         } else {
