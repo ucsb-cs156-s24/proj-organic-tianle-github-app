@@ -133,8 +133,8 @@ public class CoursesController extends ApiController {
             Optional<Staff> s = courseStaffRepository.findByCourseIdAndGithubId(id, u.getGithubId());
             if (s.isEmpty()) {
                 throw new AccessDeniedException(
-                    String.format("User %s is not authorized to get course %d",
-                            u.getGithubLogin(), id));
+                        String.format("User %s is not authorized to get course %d",
+                                u.getGithubLogin(), id));
             }
         }
         String githubOrg = course.getGithubOrg();
@@ -334,10 +334,10 @@ public class CoursesController extends ApiController {
             throws JsonProcessingException {
         Course targetCourse;
 
-        try {
-            targetCourse = courseRepository.findById(courseId)
-                    .orElseThrow(() -> new EntityNotFoundException(Course.class, courseId));
-        } catch (Exception e) {
+        Optional<Course> tempCourse = courseRepository.findById(courseId);
+        if (tempCourse.isPresent()) {
+            targetCourse = tempCourse.get();
+        } else {
             return "Course not found";
         }
         User u = getCurrentUser().getUser();
@@ -345,10 +345,10 @@ public class CoursesController extends ApiController {
         log.warn("\u001B[33mUSER JOINING THE COURSE\u001B[0m");
         log.warn("\u001B[33m" + u.getGithubLogin() + "\u001B[0m");
         School s;
-        try {
-            s = schoolRepository.findByName(targetCourse.getSchool())
-                    .orElseThrow(() -> new EntityNotFoundException(School.class, targetCourse.getSchool()));
-        } catch (Exception e) {
+        Optional<School> tempSchool = schoolRepository.findByName(targetCourse.getSchool());
+        if (tempSchool.isPresent()) {
+            s = tempSchool.get();
+        } else {
             return "School not found";
         }
 
