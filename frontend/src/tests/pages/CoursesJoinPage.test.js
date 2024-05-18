@@ -8,8 +8,6 @@ import { coursesFixtures } from "fixtures/coursesFixtures";
 import axios from "axios";
 import AxiosMockAdapter from "axios-mock-adapter";
 
-import mockConsole from "jest-mock-console";
-
 const mockToast = jest.fn();
 jest.mock('react-toastify', () => {
     const originalModule = jest.requireActual('react-toastify');
@@ -53,10 +51,8 @@ describe("CourseJoinPage tests", () => {
         });
 
         const queryClient = new QueryClient();
-        test("renders header but table is not present", async () => {
-
-            const restoreConsole = mockConsole();
-
+        test("Load data with backend info", async () => {
+            // const restoreConsole = mockConsole();
             render(
                 <QueryClientProvider client={queryClient}>
                     <MemoryRouter>
@@ -64,8 +60,44 @@ describe("CourseJoinPage tests", () => {
                     </MemoryRouter>
                 </QueryClientProvider>
             );
+            await screen.findByText("Join")
+            axiosMock.history.get.forEach(req => console.log(req.url));
+            expect(axiosMock.history.get.length).toBeGreaterThanOrEqual(1);
             expect(screen.getByText("Join")).toBeInTheDocument();
-            restoreConsole();
+            expect(screen.getByTestId("CourseJoin-school")).toBeInTheDocument();
+            expect(screen.getByText(/UCSB/)).toBeInTheDocument();
+            expect(screen.getByText(/F23/)).toBeInTheDocument();
+            expect(screen.getByTestId("CourseJoin-school")).toBeInTheDocument();
+            expect(screen.getByTestId("CourseJoin-school")).toHaveTextContent("Course school: UCSB");
+            // restoreConsole();
+        });
+
+        test("Do the job when click join", async () => {
+            axiosMock.onPost("/api/courses/join").reply(202, {});
+            // const restoreConsole = mockConsole();
+            render(
+                <QueryClientProvider client={queryClient}>
+                    <MemoryRouter>
+                        <CourseJoinPage />
+                    </MemoryRouter>
+                </QueryClientProvider>
+            );
+
+            await screen.findByTestId("CourseJoin-school");
+
+            const submitButton = screen.getByText("Join")
+            expect(submitButton).toBeInTheDocument();
+            fireEvent.click(submitButton);
+
+            await waitFor(() => expect(axiosMock.history.post.length).toBe(1));
+
+            expect(axiosMock.history.post[0].params).toEqual({ courseId: 17 });
+            expect(axiosMock.history.post[0].url).toEqual("/api/courses/join");
+
+            await waitFor(() => expect(mockToast).toBeCalled());
+            expect(mockToast).toBeCalledWith("Joined successfully");
+            expect(mockNavigate).toBeCalledWith({ "to": "/courses" });
+            expect(axiosMock.history.post.length).toBe(1); // times called
         });
     });
 });
