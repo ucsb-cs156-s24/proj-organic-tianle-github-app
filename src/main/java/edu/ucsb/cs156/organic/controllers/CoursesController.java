@@ -79,6 +79,9 @@ public class CoursesController extends ApiController {
     @Autowired
     GitHubToken accessToken;
 
+    @Autowired
+    GitHubUserApi gitHubUserApi;
+
     @Operation(summary = "List all courses")
     @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     @GetMapping("/all")
@@ -324,27 +327,35 @@ public class CoursesController extends ApiController {
     @Operation(summary = "Join a course")
     @PreAuthorize("hasAnyRole('ROLE_ADMIN','ROLE_INSTRUCTOR', 'ROLE_USER')")
     @PostMapping("/join")
-    @ExcludeFromJacocoGeneratedReport
     public String joinCourse(
             @Parameter(name = "id", description = "for example ucsb-cs156-f23") @RequestParam long courseId)
             throws JsonProcessingException {
-        @ExcludeFromJacocoGeneratedReport
-        Course targetCourse = courseRepository.findById(courseId)
-                .orElseThrow(() -> new EntityNotFoundException(Course.class, courseId));
+        Course targetCourse;
+
+        try {
+            targetCourse = courseRepository.findById(courseId)
+                    .orElseThrow(() -> new EntityNotFoundException(Course.class, courseId));
+        } catch (Exception e) {
+            return "Course not found";
+        }
         User u = getCurrentUser().getUser();
 
         log.warn("\u001B[33mUSER JOINING THE COURSE\u001B[0m");
         log.warn("\u001B[33m" + u.getGithubLogin() + "\u001B[0m");
-        @ExcludeFromJacocoGeneratedReport
-        School s = schoolRepository.findByName(targetCourse.getSchool())
-                .orElseThrow(() -> new EntityNotFoundException(School.class, targetCourse.getSchool()));
+        School s;
+        try {
+            s = schoolRepository.findByName(targetCourse.getSchool())
+                    .orElseThrow(() -> new EntityNotFoundException(School.class, targetCourse.getSchool()));
+        } catch (Exception e) {
+            return "School not found";
+        }
 
         String emailSufix = s.getAbbrev() + ".edu";
 
-        GitHubUserApi ghUser = new GitHubUserApi(accessToken);
+        // GitHubUserApi ghUser = new GitHubUserApi(accessToken);
         // log.warn("\u001B[33m"+ghUser.userEmails().toString()+"\u001B[0m");
 
-        ArrayList<String> emails = ghUser.userEmails();
+        ArrayList<String> emails = gitHubUserApi.userEmails();
 
         boolean found = false;
         String schoolEmail = "";
@@ -378,7 +389,7 @@ public class CoursesController extends ApiController {
             log.info("\u001B[33m" + res + "\u001B[0m");
         } catch (Exception e) {
             log.error(e.toString());
-            throw new GitHubAppException("Failed to invite user to org. Is this user already in the org?");
+            return "Failed to invite user to org. Is this user already in the org?";
         }
 
         // Store in db

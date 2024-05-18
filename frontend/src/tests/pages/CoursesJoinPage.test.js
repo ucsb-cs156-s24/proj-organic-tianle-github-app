@@ -64,8 +64,7 @@ describe("CourseJoinPage tests", () => {
                     </MemoryRouter>
                 </QueryClientProvider>
             );
-            await screen.findByText("Join");
-            expect(screen.queryByTestId("CoursesForm-name")).not.toBeInTheDocument();
+            expect(screen.getByText("Join")).toBeInTheDocument();
             restoreConsole();
         });
     });

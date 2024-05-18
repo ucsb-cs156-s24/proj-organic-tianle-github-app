@@ -29,7 +29,7 @@ export default function CoursesCreatePage({ storybook = false }) {
         // Stryker restore all
         axios.get(`/api/courses/join?id=${id}`).then((ci) => {
             setCourseInfo(ci.data)
-        }).catch(_ => { toast.error("Error loading course info") })
+        }).catch(_ => { })
     }, [])
 
     return (

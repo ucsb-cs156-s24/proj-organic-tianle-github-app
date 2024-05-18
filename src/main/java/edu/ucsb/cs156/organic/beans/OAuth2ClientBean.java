@@ -10,6 +10,7 @@ import org.springframework.security.oauth2.client.authentication.OAuth2Authentic
 import org.springframework.web.context.annotation.RequestScope;
 
 import com.tianleyu.github.GitHubToken;
+import com.tianleyu.github.GitHubUserApi;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -36,5 +37,26 @@ public class OAuth2ClientBean {
             }
         }
         return new GitHubToken(accessToken);
+    }
+
+    @Bean
+    @RequestScope
+    public GitHubUserApi getUserApi(OAuth2AuthorizedClientService clientService) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String accessToken = null;
+        if (authentication.getClass().isAssignableFrom(OAuth2AuthenticationToken.class)) {
+            OAuth2AuthenticationToken oauthToken = (OAuth2AuthenticationToken) authentication;
+            String clientRegistrationId = oauthToken.getAuthorizedClientRegistrationId();
+            log.error(clientRegistrationId);
+            log.error(oauthToken.getName());
+            if (clientRegistrationId.equals("github")) {
+                OAuth2AuthorizedClient client = clientService.loadAuthorizedClient(clientRegistrationId,
+                        oauthToken.getName());
+                accessToken = client.getAccessToken().getTokenValue();
+
+                log.error(accessToken);
+            }
+        }
+        return new GitHubUserApi(accessToken);
     }
 }

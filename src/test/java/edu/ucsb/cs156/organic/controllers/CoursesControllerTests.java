@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -27,7 +29,9 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tianleyu.github.GitHubApp;
 import com.tianleyu.github.GitHubAppException;
+import com.tianleyu.github.GitHubAppOrg;
 import com.tianleyu.github.GitHubToken;
+import com.tianleyu.github.GitHubUserApi;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -53,12 +57,14 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import edu.ucsb.cs156.organic.entities.Course;
 import edu.ucsb.cs156.organic.entities.School;
 import edu.ucsb.cs156.organic.entities.Staff;
+import edu.ucsb.cs156.organic.entities.Student;
 import edu.ucsb.cs156.organic.entities.User;
 import edu.ucsb.cs156.organic.entities.jobs.Job;
 import edu.ucsb.cs156.organic.models.OrgStatus;
 import edu.ucsb.cs156.organic.repositories.CourseRepository;
 import edu.ucsb.cs156.organic.repositories.SchoolRepository;
 import edu.ucsb.cs156.organic.repositories.StaffRepository;
+import edu.ucsb.cs156.organic.repositories.StudentRepository;
 import edu.ucsb.cs156.organic.repositories.UserRepository;
 import edu.ucsb.cs156.organic.repositories.jobs.JobsRepository;
 import edu.ucsb.cs156.organic.services.jobs.JobService;
@@ -86,6 +92,9 @@ public class CoursesControllerTests extends ControllerTestCase {
     StaffRepository courseStaffRepository;
 
     @MockBean
+    StudentRepository studentRepository;
+
+    @MockBean
     SchoolRepository schoolRepository;
 
     @MockBean
@@ -93,6 +102,9 @@ public class CoursesControllerTests extends ControllerTestCase {
 
     @MockBean
     GitHubToken accessToken;
+
+    @MockBean
+    GitHubUserApi gitHubUserApi;
 
     @Autowired
     CurrentUserService userService;
@@ -943,7 +955,7 @@ public class CoursesControllerTests extends ControllerTestCase {
 
     @WithMockUser(roles = { "ADMIN" })
     @Test
-    public void admin_can_query_github_app_status() throws Exception{
+    public void admin_can_query_github_app_status() throws Exception {
         // arrange
         when(courseRepository.findById(eq(1L))).thenReturn(Optional.of(course1));
         when(gitHubApp.org(anyString())).thenReturn(null);
@@ -957,7 +969,7 @@ public class CoursesControllerTests extends ControllerTestCase {
         verify(gitHubApp, times(1)).org(eq("ucsb-cs156-f23"));
 
         OrgStatus o = OrgStatus.builder().org("ucsb-cs156-f23").githubAppInstalled(true).build();
-        
+
         String expectedJson = mapper.writeValueAsString(o);
         String responseString = response.getResponse().getContentAsString();
         assertEquals(expectedJson, responseString);
@@ -965,7 +977,7 @@ public class CoursesControllerTests extends ControllerTestCase {
 
     @WithMockUser(roles = { "USER" })
     @Test
-    public void user_can_not_query_github_app_status() throws Exception{
+    public void user_can_not_query_github_app_status() throws Exception {
         // arrange
         when(courseRepository.findById(eq(1L))).thenReturn(Optional.of(course1));
         when(gitHubApp.org(anyString())).thenReturn(null);
@@ -977,7 +989,7 @@ public class CoursesControllerTests extends ControllerTestCase {
 
     @WithMockUser(roles = { "USER" })
     @Test
-    public void admin_can_query_github_app_status_that_dne() throws Exception{
+    public void admin_can_query_github_app_status_that_dne() throws Exception {
         // arrange
         when(courseRepository.findById(eq(1L))).thenReturn(Optional.empty());
         when(gitHubApp.org(anyString())).thenReturn(null);
@@ -989,7 +1001,7 @@ public class CoursesControllerTests extends ControllerTestCase {
 
     @WithMockUser(roles = { "ADMIN" })
     @Test
-    public void admin_can_query_github_app_status_not_linked() throws Exception{
+    public void admin_can_query_github_app_status_not_linked() throws Exception {
         // arrange
         when(courseRepository.findById(eq(1L))).thenReturn(Optional.of(course1));
         when(gitHubApp.org(anyString())).thenThrow(new GitHubAppException("ucsb-cs156-f23"));
@@ -1003,7 +1015,7 @@ public class CoursesControllerTests extends ControllerTestCase {
         verify(gitHubApp, times(1)).org(eq("ucsb-cs156-f23"));
 
         OrgStatus o = OrgStatus.builder().org("ucsb-cs156-f23").githubAppInstalled(false).build();
-        
+
         String expectedJson = mapper.writeValueAsString(o);
         String responseString = response.getResponse().getContentAsString();
         assertEquals(expectedJson, responseString);
@@ -1011,7 +1023,7 @@ public class CoursesControllerTests extends ControllerTestCase {
 
     @WithMockUser(roles = { "USER" })
     @Test
-    public void user_can_get_join_info() throws Exception{
+    public void user_can_get_join_info() throws Exception {
 
         when(courseRepository.findById(eq(course1.getId()))).thenReturn(Optional.of(course1));
 
@@ -1027,7 +1039,7 @@ public class CoursesControllerTests extends ControllerTestCase {
 
     @WithMockUser(roles = { "USER" })
     @Test
-    public void user_can_get_join_info_dne() throws Exception{
+    public void user_can_get_join_info_dne() throws Exception {
 
         when(courseRepository.findById(eq(course1.getId()))).thenReturn(Optional.empty());
 
@@ -1038,24 +1050,200 @@ public class CoursesControllerTests extends ControllerTestCase {
         verify(courseRepository, times(1)).findById(eq(1L));
     }
 
+    @WithMockUser(roles = { "USER" })
+    @Test
+    public void user_can_join_course_successfully() throws Exception {
+        User currentUser = currentUserService.getCurrentUser().getUser();
+        School school = School.builder().name("UCSB").abbrev("ucsb").build();
+        ArrayList<String> emails = new ArrayList<>(List.of("user@ucsb.edu"));
+        Student student = Student.builder().courseId(course1.getId()).studentId("user").email("user@ucsb.edu")
+                .githubId(currentUser.getGithubId()).build();
 
-//     @WithMockUser(roles = { "USER" })
-//     @Test
-//     public void user_can_join_course() throws Exception{
+        GitHubApp stub = mock(GitHubApp.class);
+        GitHubAppOrg s = mock(GitHubAppOrg.class);
 
-//         User currentUser = currentUserService.getCurrentUser().getUser();
-//         School s1 = School.builder().name("UCSB").abbrev("ucsb").build();
+        when(courseRepository.findById(eq(course1.getId()))).thenReturn(Optional.of(course1));
+        when(schoolRepository.findByName(eq("UCSB"))).thenReturn(Optional.of(school));
+        when(gitHubApp.org(anyString())).thenReturn(s);
+        when(studentRepository.findByCourseIdAndStudentId(eq(course1.getId()), eq("user")))
+                .thenReturn(Optional.empty());
+        when(studentRepository.save(any())).thenReturn(student);
+        when(accessToken.getToken()).thenReturn("fake-token");
 
-//         when(courseRepository.findById(eq(course1.getId()))).thenReturn(Optional.of(course1));
-//         when(schoolRepository.findByName(eq("UCSB"))).thenReturn(Optional.of(s1));
+        when(gitHubApp.org(anyString())).thenReturn(s);
+        doReturn(emails).when(gitHubUserApi).userEmails();
 
-//         // act
-//         MvcResult response = mockMvc.perform(post("/api/courses/join?id=1"))
-//                 .andExpect(status().isOk()).andReturn();
-//         // assert
-//         verify(courseRepository, times(1)).findById(eq(1L));
-//         String expectedJson = mapper.writeValueAsString(course1);
-//         String responseString = response.getResponse().getContentAsString();
-//         assertEquals(expectedJson, responseString);
-//     }
+        MvcResult response = mockMvc.perform(post("/api/courses/join?courseId=1")
+                .with(csrf()))
+                .andExpect(status().isOk()).andReturn();
+
+        verify(courseRepository, times(1)).findById(eq(1L));
+        verify(studentRepository, times(1)).save(any(Student.class));
+        String responseString = response.getResponse().getContentAsString();
+        assertEquals("OK", responseString);
+    }
+
+
+    @WithMockUser(roles = { "USER" })
+    @Test
+    public void user_can_not_join_course_wo_school_email() throws Exception {
+        User currentUser = currentUserService.getCurrentUser().getUser();
+        School school = School.builder().name("UCSB").abbrev("ucsb").build();
+        ArrayList<String> emails = new ArrayList<>(List.of("user@example.com"));
+        Student student = Student.builder().courseId(course1.getId()).studentId("user").email("user@ucsb.edu")
+                .githubId(currentUser.getGithubId()).build();
+
+        GitHubApp stub = mock(GitHubApp.class);
+        GitHubAppOrg s = mock(GitHubAppOrg.class);
+
+        when(courseRepository.findById(eq(course1.getId()))).thenReturn(Optional.of(course1));
+        when(schoolRepository.findByName(eq("UCSB"))).thenReturn(Optional.of(school));
+        when(gitHubApp.org(anyString())).thenReturn(s);
+        when(studentRepository.findByCourseIdAndStudentId(eq(course1.getId()), eq("user")))
+                .thenReturn(Optional.empty());
+        when(studentRepository.save(any())).thenReturn(student);
+        when(accessToken.getToken()).thenReturn("fake-token");
+
+        when(gitHubApp.org(anyString())).thenReturn(s);
+        doReturn(emails).when(gitHubUserApi).userEmails();
+
+        MvcResult response = mockMvc.perform(post("/api/courses/join?courseId=1")
+                .with(csrf()))
+                .andExpect(status().isOk()).andReturn();
+
+        verify(courseRepository, times(1)).findById(eq(1L));
+        String responseString = response.getResponse().getContentAsString();
+        assertEquals("User does not have a school email", responseString);
+    }
+
+    @WithMockUser(roles = { "USER" })
+    @Test
+    public void user_can_not_join_course_if_already_there() throws Exception {
+        User currentUser = currentUserService.getCurrentUser().getUser();
+        School school = School.builder().name("UCSB").abbrev("ucsb").build();
+        ArrayList<String> emails = new ArrayList<>(List.of("user@ucsb.edu"));
+        Student student = Student.builder().courseId(course1.getId()).studentId("user").email("user@ucsb.edu")
+                .githubId(currentUser.getGithubId()).build();
+
+        GitHubApp stub = mock(GitHubApp.class);
+        GitHubAppOrg s = mock(GitHubAppOrg.class);
+
+        when(courseRepository.findById(eq(course1.getId()))).thenReturn(Optional.of(course1));
+        when(schoolRepository.findByName(eq("UCSB"))).thenReturn(Optional.of(school));
+        when(gitHubApp.org(anyString())).thenReturn(s);
+        when(studentRepository.findByCourseIdAndStudentId(eq(course1.getId()), eq("user")))
+                .thenReturn(Optional.of(student));
+        when(studentRepository.save(any())).thenReturn(student);
+        when(accessToken.getToken()).thenReturn("fake-token");
+
+        when(gitHubApp.org(anyString())).thenReturn(s);
+        doReturn(emails).when(gitHubUserApi).userEmails();
+
+        MvcResult response = mockMvc.perform(post("/api/courses/join?courseId=1")
+                .with(csrf()))
+                .andExpect(status().isOk()).andReturn();
+
+        verify(courseRepository, times(1)).findById(eq(1L));
+        String responseString = response.getResponse().getContentAsString();
+        assertEquals("User is already in the course", responseString);
+    }
+
+    @WithMockUser(roles = { "USER" })
+    @Test
+    public void user_can_not_join_due_to_github_error() throws Exception {
+        User currentUser = currentUserService.getCurrentUser().getUser();
+        School school = School.builder().name("UCSB").abbrev("ucsb").build();
+        ArrayList<String> emails = new ArrayList<>(List.of("user@ucsb.edu"));
+        Student student = Student.builder().courseId(course1.getId()).studentId("user").email("user@ucsb.edu")
+                .githubId(currentUser.getGithubId()).build();
+
+        GitHubApp stub = mock(GitHubApp.class);
+        GitHubAppOrg s = mock(GitHubAppOrg.class);
+
+        when(courseRepository.findById(eq(course1.getId()))).thenReturn(Optional.of(course1));
+        when(schoolRepository.findByName(eq("UCSB"))).thenReturn(Optional.of(school));
+        when(gitHubApp.org(anyString())).thenReturn(s);
+        when(studentRepository.findByCourseIdAndStudentId(eq(course1.getId()), eq("user")))
+                .thenReturn(Optional.empty());
+        when(studentRepository.save(any())).thenReturn(student);
+        when(accessToken.getToken()).thenReturn("fake-token");
+
+        when(s.inviteUserToThisOrg(any())).thenThrow(new GitHubAppException("error"));
+
+        when(gitHubApp.org(anyString())).thenReturn(s);
+        doReturn(emails).when(gitHubUserApi).userEmails();
+
+
+        MvcResult response = mockMvc.perform(post("/api/courses/join?courseId=1")
+                .with(csrf()))
+                .andExpect(status().isOk()).andReturn();
+
+        verify(courseRepository, times(1)).findById(eq(1L));
+        String responseString = response.getResponse().getContentAsString();
+        assertEquals("Failed to invite user to org. Is this user already in the org?", responseString);
+    }
+
+    @WithMockUser(roles = { "USER" })
+    @Test
+    public void user_can_not_join_if_course_dne() throws Exception {
+        User currentUser = currentUserService.getCurrentUser().getUser();
+        School school = School.builder().name("UCSB").abbrev("ucsb").build();
+        ArrayList<String> emails = new ArrayList<>(List.of("user@ucsb.edu"));
+        Student student = Student.builder().courseId(course1.getId()).studentId("user").email("user@ucsb.edu")
+                .githubId(currentUser.getGithubId()).build();
+
+        GitHubApp stub = mock(GitHubApp.class);
+        GitHubAppOrg s = mock(GitHubAppOrg.class);
+
+        when(courseRepository.findById(eq(course1.getId()))).thenReturn(Optional.empty());
+        when(schoolRepository.findByName(eq("UCSB"))).thenReturn(Optional.of(school));
+        when(gitHubApp.org(anyString())).thenReturn(s);
+        when(studentRepository.findByCourseIdAndStudentId(eq(course1.getId()), eq("user")))
+                .thenReturn(Optional.empty());
+        when(studentRepository.save(any())).thenReturn(student);
+        when(accessToken.getToken()).thenReturn("fake-token");
+
+        when(gitHubApp.org(anyString())).thenReturn(s);
+        doReturn(emails).when(gitHubUserApi).userEmails();
+
+        MvcResult response = mockMvc.perform(post("/api/courses/join?courseId=1")
+                .with(csrf()))
+                .andExpect(status().isOk()).andReturn();
+
+        verify(courseRepository, times(1)).findById(eq(1L));
+        String responseString = response.getResponse().getContentAsString();
+        assertEquals("Course not found", responseString);
+    }
+
+    @WithMockUser(roles = { "USER" })
+    @Test
+    public void user_can_not_join_if_school_dne() throws Exception {
+        User currentUser = currentUserService.getCurrentUser().getUser();
+        School school = School.builder().name("UCSB").abbrev("ucsb").build();
+        ArrayList<String> emails = new ArrayList<>(List.of("user@ucsb.edu"));
+        Student student = Student.builder().courseId(course1.getId()).studentId("user").email("user@ucsb.edu")
+                .githubId(currentUser.getGithubId()).build();
+
+        GitHubApp stub = mock(GitHubApp.class);
+        GitHubAppOrg s = mock(GitHubAppOrg.class);
+
+        when(courseRepository.findById(eq(course1.getId()))).thenReturn(Optional.of(course1));
+        when(schoolRepository.findByName(eq("UCSB"))).thenReturn(Optional.empty());
+        when(gitHubApp.org(anyString())).thenReturn(s);
+        when(studentRepository.findByCourseIdAndStudentId(eq(course1.getId()), eq("user")))
+                .thenReturn(Optional.empty());
+        when(studentRepository.save(any())).thenReturn(student);
+        when(accessToken.getToken()).thenReturn("fake-token");
+
+        when(gitHubApp.org(anyString())).thenReturn(s);
+        doReturn(emails).when(gitHubUserApi).userEmails();
+
+        MvcResult response = mockMvc.perform(post("/api/courses/join?courseId=1")
+                .with(csrf()))
+                .andExpect(status().isOk()).andReturn();
+
+        verify(courseRepository, times(1)).findById(eq(1L));
+        String responseString = response.getResponse().getContentAsString();
+        assertEquals("School not found", responseString);
+    }
 }
