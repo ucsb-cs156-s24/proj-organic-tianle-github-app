@@ -159,7 +159,7 @@ public class JobsControllerTests extends ControllerTestCase {
 
                 // act
                 MvcResult response = mockMvc
-                                .perform(post("/api/jobs/launch/testjob?fail=false&sleepMs=2000").with(csrf()))
+                                .perform(post("/api/jobs/launch/testjob?fail=false&sleepMs=2000&id=1").with(csrf()))
                                 .andExpect(status().isOk()).andReturn();
 
                 // assert
@@ -209,20 +209,31 @@ public class JobsControllerTests extends ControllerTestCase {
 
                 // act
                 MvcResult response = mockMvc
-                                .perform(post("/api/jobs/launch/testjob?fail=true&sleepMs=4000").with(csrf()))
+                                .perform(post("/api/jobs/launch/testjob?fail=true&sleepMs=200&id=2").with(csrf()))
                                 .andExpect(status().isOk()).andReturn();
 
                 String responseString = response.getResponse().getContentAsString();
                 Job jobReturned = objectMapper.readValue(responseString, Job.class);
 
+                log.info("---------------WAITING FOR JOB TO FAIL------------------------");
+
                 assertEquals("running", jobReturned.getStatus());
 
-                await().atMost(5, SECONDS)
+                await().atMost(10, SECONDS)
                 .untilAsserted(() -> {
+                        log.info("---------------TESTING JOB TO FAIL------------------------");
                         verify(jobsRepository, atLeast(1)).save(jobCaptor.capture());                        
                         List<Job> values = jobCaptor.getAllValues();
-                        assertEquals("error", values.get(0).getStatus(), "first saved job should show running");
-                        assertEquals(jobFailed.getLog(), values.get(0).getLog());
+                        log.info("JOB LIST LENGTH: "+values.size());
+                        Job target = Job.builder().id(999).log("Dummy job that will not be used").build();
+                        for(int i=0;i<(int)values.size();i++){
+                                if(values.get(i).getId() == 2){
+                                        target = values.get(i);
+                                        break;
+                                }
+                        }
+                        assertEquals("error", target.getStatus(), "first saved job should show running");
+                        assertEquals(jobFailed.getLog(), target.getLog());
                 });
         }
 
@@ -234,7 +245,7 @@ public class JobsControllerTests extends ControllerTestCase {
                                 "message", "sleepMs must be between 0 and 60000");
                 String expected = mapper.writeValueAsString(expectedMap);       
                 MvcResult response = mockMvc
-                                .perform(post("/api/jobs/launch/testjob?fail=false&sleepMs=-1").with(csrf()))
+                                .perform(post("/api/jobs/launch/testjob?fail=false&sleepMs=-1&id=3").with(csrf()))
                                 .andExpect(status().isBadRequest()).andReturn();
                 assertInstanceOf(IllegalArgumentException.class, response.getResolvedException());
                 assertEquals(expected, response.getResponse().getContentAsString());
@@ -255,7 +266,7 @@ public class JobsControllerTests extends ControllerTestCase {
                                 "message", "sleepMs must be between 0 and 60000");
                 String expected = mapper.writeValueAsString(expectedMap);       
                 MvcResult response = mockMvc
-                                .perform(post("/api/jobs/launch/testjob?fail=false&sleepMs=60001").with(csrf()))
+                                .perform(post("/api/jobs/launch/testjob?fail=false&sleepMs=60001&id=4").with(csrf()))
                                 .andExpect(status().isBadRequest()).andReturn();
                 assertInstanceOf(IllegalArgumentException.class, response.getResolvedException());
                 assertEquals(expected, response.getResponse().getContentAsString());
@@ -266,7 +277,7 @@ public class JobsControllerTests extends ControllerTestCase {
         public void admin_launch_test_job_with_boundary_parameter_0() throws Exception {
                 // boundary are 0 and 60000
                 mockMvc
-                                .perform(post("/api/jobs/launch/testjob?fail=false&sleepMs=0").with(csrf()))
+                                .perform(post("/api/jobs/launch/testjob?fail=false&sleepMs=0&id=5").with(csrf()))
                                 .andExpect(status().isOk()).andReturn();
 
         }
@@ -276,7 +287,7 @@ public class JobsControllerTests extends ControllerTestCase {
         public void admin_launch_test_job_with_boundary_parameter_60000() throws Exception {
 
                 mockMvc
-                                .perform(post("/api/jobs/launch/testjob?fail=false&sleepMs=60000").with(csrf()))
+                                .perform(post("/api/jobs/launch/testjob?fail=false&sleepMs=60000&id=6").with(csrf()))
                                 .andExpect(status().isOk()).andReturn();
         }
 
