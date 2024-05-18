@@ -71,10 +71,10 @@ public class CoursesController extends ApiController {
         User u = getCurrentUser().getUser();
         log.info("u={}", u);
         // This is how you use it
-        log.warn("\u001B[33mTOKENTOTOKEN " + accessToken.getToken() + "\u001B[0m");
-        log.warn("\u001B[33mGetting User Emails\u001B[0m");
-        GitHubUserApi ghUser = new GitHubUserApi(accessToken);
-        log.warn("\u001B[33m"+ghUser.userEmails().toString()+"\u001B[0m");
+        // log.warn("\u001B[33mTOKENTOTOKEN " + accessToken.getToken() + "\u001B[0m");
+        // log.warn("\u001B[33mGetting User Emails\u001B[0m");
+        // GitHubUserApi ghUser = new GitHubUserApi(accessToken);
+        // log.warn("\u001B[33m"+ghUser.userEmails().toString()+"\u001B[0m");
         if (u.isAdmin()) {
             return courseRepository.findAll();
         } else {
@@ -97,6 +97,31 @@ public class CoursesController extends ApiController {
                     .orElseThrow(() -> new AccessDeniedException(
                             String.format("User %s is not authorized to get course %d",
                                     u.getGithubLogin(), id)));
+        }
+        return course;
+    }
+
+    @Operation(summary = "Get GitHub App status")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
+    @GetMapping("/github")
+    public Course getGithubOrgById(
+            @Parameter(name = "id") @RequestParam Long id) {
+        User u = getCurrentUser().getUser();
+
+        Course course = courseRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException(Course.class, id));
+
+        if (!u.isAdmin()) {
+            courseStaffRepository.findByCourseIdAndGithubId(id, u.getGithubId())
+                    .orElseThrow(() -> new AccessDeniedException(
+                            String.format("User %s is not authorized to get course %d",
+                                    u.getGithubLogin(), id)));
+        }
+        String githubOrg = course.getGithubOrg();
+        try {
+            GitHubAppOrg org = gitHubApp.org(githubOrg);
+        } catch (Exception e) {
+            log.error("Error getting org: {}", e);
         }
         return course;
     }
