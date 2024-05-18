@@ -328,14 +328,14 @@ public class CoursesController extends ApiController {
     public String joinCourse(
             @Parameter(name = "id", description = "for example ucsb-cs156-f23") @RequestParam long courseId)
             throws JsonProcessingException {
-
+        @ExcludeFromJacocoGeneratedReport
         Course targetCourse = courseRepository.findById(courseId)
                 .orElseThrow(() -> new EntityNotFoundException(Course.class, courseId));
         User u = getCurrentUser().getUser();
 
         log.warn("\u001B[33mUSER JOINING THE COURSE\u001B[0m");
         log.warn("\u001B[33m" + u.getGithubLogin() + "\u001B[0m");
-
+        @ExcludeFromJacocoGeneratedReport
         School s = schoolRepository.findByName(targetCourse.getSchool())
                 .orElseThrow(() -> new EntityNotFoundException(School.class, targetCourse.getSchool()));
 

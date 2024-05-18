@@ -1025,6 +1025,19 @@ public class CoursesControllerTests extends ControllerTestCase {
         assertEquals(expectedJson, responseString);
     }
 
+    @WithMockUser(roles = { "USER" })
+    @Test
+    public void user_can_get_join_info_dne() throws Exception{
+
+        when(courseRepository.findById(eq(course1.getId()))).thenReturn(Optional.empty());
+
+        // act
+        MvcResult response = mockMvc.perform(get("/api/courses/join?id=1"))
+                .andExpect(status().isNotFound()).andReturn();
+        // assert
+        verify(courseRepository, times(1)).findById(eq(1L));
+    }
+
 
 //     @WithMockUser(roles = { "USER" })
 //     @Test
