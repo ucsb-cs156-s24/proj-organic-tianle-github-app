@@ -61,6 +61,22 @@ describe("HomePage tests", () => {
             greetingElement.textContent
         ).toMatch(/Good (morning|afternoon|evening), cgaucho/); 
     });
+
+    test('shows information for purpose of app', () => {
+      axiosMock.onGet("/api/currentUser").reply(200, apiCurrentUserFixtures.userOnly); // Adjust this if needed
+      render(
+          <QueryClientProvider client={queryClient}>
+              <MemoryRouter>
+                  <HomePage />
+              </MemoryRouter>
+          </QueryClientProvider>
+      );
+  
+      const infoElement = screen.getByTestId("info");
+      expect(
+          infoElement.textContent
+      ).toMatch(/This app is intended as a replacement for the ucsb-cs-github-linker app used in many courses at UCSB, as well as some courses at other universities./); 
+  });
     
     // test('renders greeting for non-logged-in users correctly', () => {
     //     // Mock the `useCurrentUser` hook to return a logged-out state
