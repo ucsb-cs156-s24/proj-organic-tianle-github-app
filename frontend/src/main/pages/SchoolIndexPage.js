@@ -10,6 +10,18 @@ export default function SchoolIndexPage() {
 
     const { data: currentUser } = useCurrentUser();
   
+    const deleteButton = () => {
+      return (
+        <Button
+          variant="danger"
+          href="/schools/create"
+          style={{ float: "right" }}
+        >
+          Delete School
+        </Button>
+      )
+    }
+
     const createButton = () => {  
       
         return (
@@ -37,10 +49,10 @@ export default function SchoolIndexPage() {
         <BasicLayout>
           <div className="pt-2">
             {createButton()}
+            {deleteButton()}
             <h1>School</h1>
             <SchoolTable school={school} currentUser={currentUser} />
           </div>
         </BasicLayout>
       )
   }
-  

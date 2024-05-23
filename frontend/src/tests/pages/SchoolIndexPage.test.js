@@ -57,6 +57,14 @@ describe("SchoolIndexPage tests", () => {
         const button = screen.getByText(/Create School/);
         expect(button).toHaveAttribute("href", "/schools/create"); //fixme could have bug because plural
         expect(button).toHaveAttribute("style", "float: right;");
+       
+        // assert
+        await waitFor( ()=>{
+            expect(screen.getByText(/Delete School/)).toBeInTheDocument();
+        });
+        const button2 = screen.getByText(/Delete School/);
+        expect(button2).toHaveAttribute("href", "/schools/create"); //fixme could have bug because plural
+        expect(button2).toHaveAttribute("style", "float: right;");
     });
 
     test("renders three schools correctly for admin", async () => {    
