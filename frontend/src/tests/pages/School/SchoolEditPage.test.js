@@ -44,7 +44,7 @@ describe("SchoolEditPage tests", () => {
             axiosMock.resetHistory();
             axiosMock.onGet("/api/currentUser").reply(200, apiCurrentUserFixtures.userOnly);
             axiosMock.onGet("/api/systemInfo").reply(200, systemInfoFixtures.showingNeither);
-            axiosMock.onGet("/api/schools/get", { params: { abbrev: "ucsb" } }).timeout();
+            axiosMock.onGet("/api/schools", { params: { abbrev: "ucsb" } }).timeout();
         });
 
         const queryClient = new QueryClient();
@@ -74,7 +74,7 @@ describe("SchoolEditPage tests", () => {
             axiosMock.resetHistory();
             axiosMock.onGet("/api/currentUser").reply(200, apiCurrentUserFixtures.userOnly);
             axiosMock.onGet("/api/systemInfo").reply(200, systemInfoFixtures.showingNeither);
-            axiosMock.onGet("/api/schools/get", { params: { abbrev: "ucsb" } }).reply(200, {
+            axiosMock.onGet("/api/schools", { params: { abbrev: "ucsb" } }).reply(200, {
                 abbrev: "ucsb",
                 name: "University of California, Santa Barbara",
                 termRegex: "regexTest",
@@ -167,7 +167,7 @@ describe("SchoolEditPage tests", () => {
 
             await waitFor(() => expect(mockToast).toBeCalled());
             expect(mockToast).toBeCalledWith("School Updated - abbrev: ucsb name: University of California, Sha Bi");
-            expect(mockNavigate).toBeCalledWith({ "to": "/schools" });
+            expect(mockNavigate).toBeCalledWith({ "to": "/admin/schools" });
 
             expect(axiosMock.history.put.length).toBe(1); // times called
             expect(axiosMock.history.put[0].params).toEqual({ abbrev: "ucsb"});
