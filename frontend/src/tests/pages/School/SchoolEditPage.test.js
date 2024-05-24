@@ -170,6 +170,7 @@ describe("SchoolEditPage tests", () => {
             expect(mockNavigate).toBeCalledWith({ "to": "/schools" });
 
             expect(axiosMock.history.put.length).toBe(1); // times called
+            expect(axiosMock.history.put[0].params).toEqual({ abbrev: "ucsb"});
             expect(axiosMock.history.put[0].data).toEqual(JSON.stringify({ name: "University of California, Sha Bi", termRegex: "regexTest2", termDescription: "descTest2", termError: "errTest2"}));
 
         });
