@@ -65,8 +65,7 @@ describe("SchoolIndexPage tests", () => {
         const button2 = screen.getByText(/Delete/);
         expect(screen.queryByTestId("Delete")).not.toBeInTheDocument();
 
-        // expect(button2).toHaveAttribute("href", "/schools/create"); //fixme could have bug because plural
-        // expect(button2).toHaveAttribute("style", "float: right;");
+
     });
 
     test("renders three schools correctly for admin", async () => {    
@@ -142,8 +141,7 @@ describe("SchoolIndexPage tests", () => {
         // act
         fireEvent.click(deleteButton);
 
-        // assert
-        // await waitFor(() => { expect(mockToast).toBeCalledWith("School with id ucsb was deleted") });
+ 
 
     });
 
