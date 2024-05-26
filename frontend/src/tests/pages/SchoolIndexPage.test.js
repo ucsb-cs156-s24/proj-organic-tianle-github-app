@@ -62,7 +62,7 @@ describe("SchoolIndexPage tests", () => {
         await waitFor( ()=>{
             expect(screen.getByText(/Delete/)).toBeInTheDocument();
         });
-        const button2 = screen.getByText(/Delete/);
+        //const button2 = screen.getByText(/Delete/);
         expect(screen.queryByTestId("Delete")).not.toBeInTheDocument();
 
 
