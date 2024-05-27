@@ -33,6 +33,7 @@ Please note that things gets a little bit different in the production environmen
 3. Use `dokku storage:list <your-app>` to see if it's mounted.
 4. Run `dokku config:set <your-app> --no-restart GITHUB_PKFILE=/app/.github.pk.der` to set the environment variable.
 5. Run `dokku ps:rebuild <your-app>` to restart the app.
+**If you run into errors, or it's just simply not working, please try to change the permission of your `.github.pk.der` file to be readable to the dokku user**
 
 
 # About the `.env` and `.env.SAMPLE` files.
