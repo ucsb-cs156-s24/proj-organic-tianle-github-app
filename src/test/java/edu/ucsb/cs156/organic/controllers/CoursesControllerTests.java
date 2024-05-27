@@ -33,6 +33,7 @@ import com.tianleyu.github.GitHubAppOrg;
 import com.tianleyu.github.GitHubToken;
 import com.tianleyu.github.GitHubUserApi;
 
+import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -960,6 +961,7 @@ public class CoursesControllerTests extends ControllerTestCase {
         // arrange
         when(courseRepository.findById(eq(1L))).thenReturn(Optional.of(course1));
         when(gitHubApp.org(anyString())).thenReturn(null);
+        when(gitHubApp.appInfo()).thenReturn(new JSONObject("{\"slug\":\"123\"}"));
 
         // act
         MvcResult response = mockMvc.perform(get("/api/courses/github?id=1"))
@@ -969,7 +971,7 @@ public class CoursesControllerTests extends ControllerTestCase {
         verify(courseRepository, times(1)).findById(eq(1L));
         verify(gitHubApp, times(1)).org(eq("ucsb-cs156-f23"));
 
-        OrgStatus o = OrgStatus.builder().org("ucsb-cs156-f23").githubAppInstalled(true).build();
+        OrgStatus o = OrgStatus.builder().org("ucsb-cs156-f23").githubAppInstalled(true).name("123").build();
 
         String expectedJson = mapper.writeValueAsString(o);
         String responseString = response.getResponse().getContentAsString();
@@ -987,6 +989,7 @@ public class CoursesControllerTests extends ControllerTestCase {
         when(courseRepository.findById(eq(1L))).thenReturn(Optional.of(course1));
         when(gitHubApp.org(anyString())).thenReturn(null);
         when(courseStaffRepository.findByCourseIdAndGithubId(any(), any())).thenReturn(Optional.of(courseStaff1));
+        when(gitHubApp.appInfo()).thenReturn(new JSONObject("{\"slug\":\"123\"}"));
 
         // act
         MvcResult response = mockMvc.perform(get("/api/courses/github?id=1"))
@@ -996,7 +999,7 @@ public class CoursesControllerTests extends ControllerTestCase {
         verify(courseRepository, times(1)).findById(eq(1L));
         verify(gitHubApp, times(1)).org(eq("ucsb-cs156-f23"));
 
-        OrgStatus o = OrgStatus.builder().org("ucsb-cs156-f23").githubAppInstalled(true).build();
+        OrgStatus o = OrgStatus.builder().org("ucsb-cs156-f23").name("123").githubAppInstalled(true).build();
 
         String expectedJson = mapper.writeValueAsString(o);
         String responseString = response.getResponse().getContentAsString();
@@ -1009,6 +1012,7 @@ public class CoursesControllerTests extends ControllerTestCase {
         // arrange
         when(courseRepository.findById(eq(1L))).thenReturn(Optional.of(course1));
         when(gitHubApp.org(anyString())).thenReturn(null);
+        when(gitHubApp.appInfo()).thenReturn(new JSONObject("{\"slug\":\"123\"}"));
 
         // act
         MvcResult response = mockMvc.perform(get("/api/courses/github?id=1"))
@@ -1049,6 +1053,7 @@ public class CoursesControllerTests extends ControllerTestCase {
         // arrange
         when(courseRepository.findById(eq(1L))).thenReturn(Optional.of(course1));
         when(gitHubApp.org(anyString())).thenThrow(new GitHubAppException("ucsb-cs156-f23"));
+        when(gitHubApp.appInfo()).thenReturn(new JSONObject("{\"slug\":\"123\"}"));
 
         // act
         MvcResult response = mockMvc.perform(get("/api/courses/github?id=1"))
@@ -1058,7 +1063,7 @@ public class CoursesControllerTests extends ControllerTestCase {
         verify(courseRepository, times(1)).findById(eq(1L));
         verify(gitHubApp, times(1)).org(eq("ucsb-cs156-f23"));
 
-        OrgStatus o = OrgStatus.builder().org("ucsb-cs156-f23").githubAppInstalled(false).build();
+        OrgStatus o = OrgStatus.builder().org("ucsb-cs156-f23").githubAppInstalled(false).name("123").build();
 
         String expectedJson = mapper.writeValueAsString(o);
         String responseString = response.getResponse().getContentAsString();
