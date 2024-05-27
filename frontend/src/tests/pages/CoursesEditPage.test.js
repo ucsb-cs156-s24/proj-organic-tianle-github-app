@@ -216,6 +216,8 @@ describe("CoursesEditPage tests", () => {
             const githubAppTipsLink = screen.getByTestId("CourseEdit-GHAT-Link");
             expect(githubAppTipsLink).toBeInTheDocument();
             expect(githubAppTipsLink).toHaveAttribute("href", "https://github.com/apps/Test");
+            expect(githubAppTipsLink).toHaveAttribute("target", "_blank");
+            expect(githubAppTipsLink).toHaveAttribute("rel", "noopener noreferrer");
         });
 
         test("No Github App tips!", async () => {
