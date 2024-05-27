@@ -14,4 +14,5 @@ import lombok.AccessLevel;
 public class OrgStatus {
   private String org;
   private boolean githubAppInstalled;
+  private String name;
 }

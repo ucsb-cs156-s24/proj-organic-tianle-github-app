@@ -4,6 +4,7 @@ import CoursesForm from "main/components/Courses/CoursesForm";
 import { Navigate } from 'react-router-dom'
 import { useBackend, useBackendMutation } from "main/utils/useBackend";
 import { toast } from "react-toastify";
+import GHATips from "main/components/Courses/GitHubAppTips";
 
 export default function CoursesEditPage({ storybook = false }) {
   let { id } = useParams();
@@ -76,7 +77,7 @@ export default function CoursesEditPage({ storybook = false }) {
         <h1>Edit Course</h1>
         {
           githubStatus && githubStatus.githubAppInstalled === false &&
-          <p data-testid="CourseEdit-githubAppTips" style={{ color: "red" }}>Your GitHub Organization doesn't have our GitHub App installed, please follow the instruction <a href="/githubApp.html">here</a></p>
+          <GHATips data-testid="CourseEdit-githubAppTips" app={githubStatus.name}></GHATips>
         }
         {
           course && <CoursesForm initialContents={course} submitAction={onSubmit} buttonLabel="Update" />

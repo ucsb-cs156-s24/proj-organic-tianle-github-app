@@ -16,6 +16,7 @@ import liquibase.pro.packaged.gh;
 import lombok.extern.slf4j.Slf4j;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import org.json.JSONObject;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -138,6 +139,7 @@ public class CoursesController extends ApiController {
                                 u.getGithubLogin(), id));
             }
         }
+        JSONObject appInfo = gitHubApp.appInfo();
         String githubOrg = course.getGithubOrg();
         try {
             log.error("QUERY FOR OGR: " + githubOrg);
@@ -147,11 +149,13 @@ public class CoursesController extends ApiController {
             return OrgStatus.builder()
                     .org(githubOrg)
                     .githubAppInstalled(false)
+                    .name(appInfo.getString("slug"))
                     .build();
         }
         return OrgStatus.builder()
                 .org(githubOrg)
                 .githubAppInstalled(true)
+                .name(appInfo.getString("slug"))
                 .build();
     }
 
