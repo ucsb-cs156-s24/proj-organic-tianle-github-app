@@ -8,6 +8,7 @@ import LoadingPage from "main/pages/LoadingPage";
 import LoginPage from "main/pages/LoginPage";
 import ProfilePage from "main/pages/ProfilePage";
 import CoursesEditPage from "main/pages/CoursesEditPage";
+import CourseJoinPage from "main/pages/CourseJoinPage";
 
 import AdminUsersPage from "main/pages/AdminUsersPage";
 import AdminJobsPage from "main/pages/AdminJobsPage";
@@ -34,6 +35,7 @@ function App() {
     <>
       <Route path="/profile" element={<ProfilePage />} />
       <Route path="/courses" element={<CourseIndexPage />} />
+      <Route path="/courses/join/:id" element={<CourseJoinPage />} />
     </>
   ) : null;
 

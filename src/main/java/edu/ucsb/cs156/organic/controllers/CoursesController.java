@@ -2,13 +2,17 @@ package edu.ucsb.cs156.organic.controllers;
 
 import edu.ucsb.cs156.organic.entities.Course;
 import edu.ucsb.cs156.organic.entities.Staff;
+import edu.ucsb.cs156.organic.entities.Student;
 import edu.ucsb.cs156.organic.entities.User;
 import edu.ucsb.cs156.organic.repositories.CourseRepository;
+import edu.ucsb.cs156.organic.repositories.SchoolRepository;
 import edu.ucsb.cs156.organic.repositories.StaffRepository;
+import edu.ucsb.cs156.organic.repositories.StudentRepository;
 import edu.ucsb.cs156.organic.repositories.UserRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import liquibase.pro.packaged.gh;
 import lombok.extern.slf4j.Slf4j;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -16,6 +20,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.oauth2.client.ReactiveOAuth2AuthorizedClientManager;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -26,13 +31,26 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import edu.ucsb.cs156.organic.errors.EntityNotFoundException;
+import edu.ucsb.cs156.organic.models.GeneralOperationResp;
+import edu.ucsb.cs156.organic.models.OrgStatus;
+import edu.ucsb.cs156.organic.entities.School;
+
 import org.springframework.security.access.AccessDeniedException;
+
+import com.tianleyu.github.GitHubApp;
+import com.tianleyu.github.GitHubAppException;
+import com.tianleyu.github.GitHubAppOrg;
+import com.tianleyu.github.GitHubToken;
+import com.tianleyu.github.GitHubUserApi;
+import com.tianleyu.github.JwtProvider;
+import org.kohsuke.github.GitHub;
 
 import java.time.LocalDateTime;
 
 import javax.transaction.Transactional;
 import javax.validation.Valid;
 
+import java.util.ArrayList;
 import java.util.Optional;
 
 @Tag(name = "Courses")
@@ -48,7 +66,22 @@ public class CoursesController extends ApiController {
     StaffRepository courseStaffRepository;
 
     @Autowired
+    SchoolRepository schoolRepository;
+
+    @Autowired
     UserRepository userRepository;
+
+    @Autowired
+    StudentRepository studentRepository;
+
+    @Autowired
+    GitHubApp gitHubApp;
+
+    @Autowired
+    GitHubToken accessToken;
+
+    @Autowired
+    GitHubUserApi gitHubUserApi;
 
     @Operation(summary = "List all courses")
     @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
@@ -56,6 +89,11 @@ public class CoursesController extends ApiController {
     public Iterable<Course> allCourses() {
         User u = getCurrentUser().getUser();
         log.info("u={}", u);
+        // This is how you use it
+        // log.warn("\u001B[33mTOKENTOTOKEN " + accessToken.getToken() + "\u001B[0m");
+        // log.warn("\u001B[33mGetting User Emails\u001B[0m");
+        // GitHubUserApi ghUser = new GitHubUserApi(accessToken);
+        // log.warn("\u001B[33m"+ghUser.userEmails().toString()+"\u001B[0m");
         if (u.isAdmin()) {
             return courseRepository.findAll();
         } else {
@@ -63,24 +101,59 @@ public class CoursesController extends ApiController {
         }
     }
 
-    @Operation(summary= "Get a single course by id")
+    @Operation(summary = "Get a single course by id")
     @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
     @GetMapping("/get")
     public Course getById(
-            @Parameter(name="id") @RequestParam Long id) {
+            @Parameter(name = "id") @RequestParam Long id) {
         User u = getCurrentUser().getUser();
 
         Course course = courseRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(Course.class, id));
-        
-        if(!u.isAdmin()){
-                courseStaffRepository.findByCourseIdAndGithubId(id, u.getGithubId())
-                        .orElseThrow(() -> new AccessDeniedException(
-                String.format("User %s is not authorized to get course %d", u.getGithubLogin(), id)));
-        }
 
+        if (!u.isAdmin()) {
+            courseStaffRepository.findByCourseIdAndGithubId(id, u.getGithubId())
+                    .orElseThrow(() -> new AccessDeniedException(
+                            String.format("User %s is not authorized to get course %d",
+                                    u.getGithubLogin(), id)));
+        }
         return course;
-}
+    }
+
+    @Operation(summary = "Get GitHub App status")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
+    @GetMapping("/github")
+    public OrgStatus getGithubOrgById(
+            @Parameter(name = "id") @RequestParam Long id) {
+        User u = getCurrentUser().getUser();
+
+        Course course = courseRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException(Course.class, id));
+
+        if (!u.isAdmin()) {
+            Optional<Staff> s = courseStaffRepository.findByCourseIdAndGithubId(id, u.getGithubId());
+            if (s.isEmpty()) {
+                throw new AccessDeniedException(
+                        String.format("User %s is not authorized to get course %d",
+                                u.getGithubLogin(), id));
+            }
+        }
+        String githubOrg = course.getGithubOrg();
+        try {
+            log.error("QUERY FOR OGR: " + githubOrg);
+            GitHubAppOrg org = gitHubApp.org(githubOrg);
+        } catch (Exception e) {
+            log.error(e.toString());
+            return OrgStatus.builder()
+                    .org(githubOrg)
+                    .githubAppInstalled(false)
+                    .build();
+        }
+        return OrgStatus.builder()
+                .org(githubOrg)
+                .githubAppInstalled(true)
+                .build();
+    }
 
     @Operation(summary = "Create a new course")
     @PreAuthorize("hasAnyRole('ROLE_ADMIN','ROLE_INSTRUCTOR')")
@@ -161,13 +234,13 @@ public class CoursesController extends ApiController {
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     @DeleteMapping("/staff")
     public Object deleteStaff(
-        @Parameter(name = "id") @RequestParam Long id) {
+            @Parameter(name = "id") @RequestParam Long id) {
         Staff staff = courseStaffRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(Staff.class, id.toString()));
 
-                courseStaffRepository.delete(staff);
-                return genericMessage("Staff with id %s is deleted".formatted(id));
-        }
+        courseStaffRepository.delete(staff);
+        return genericMessage("Staff with id %s is deleted".formatted(id));
+    }
 
     @Operation(summary = "Update information for a course")
     // allow for roles of ADMIN or INSTRUCTOR but only if the user is a staff member
@@ -233,6 +306,105 @@ public class CoursesController extends ApiController {
 
         courseRepository.delete(course);
         return course;
+    }
+
+    @Operation(summary = "Get a joinable info for a course")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
+    @GetMapping("/join")
+    public Course joinById(
+            @Parameter(name = "id") @RequestParam Long id) {
+        User u = getCurrentUser().getUser();
+
+        Course course = courseRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException(Course.class, id));
+
+        // if (!u.isAdmin()) {
+        // courseStaffRepository.findByCourseIdAndGithubId(id, u.getGithubId())
+        // .orElseThrow(() -> new AccessDeniedException(
+        // String.format("User %s is not authorized to get course %d",
+        // u.getGithubLogin(), id)));
+        // }
+        return course;
+    }
+
+    @Operation(summary = "Join a course")
+    @PreAuthorize("hasAnyRole('ROLE_ADMIN','ROLE_INSTRUCTOR', 'ROLE_USER')")
+    @PostMapping("/join")
+    public GeneralOperationResp joinCourse(
+            @Parameter(name = "id", description = "for example ucsb-cs156-f23") @RequestParam long courseId)
+            throws JsonProcessingException {
+        Course targetCourse;
+
+        Optional<Course> tempCourse = courseRepository.findById(courseId);
+        if (tempCourse.isPresent()) {
+            targetCourse = tempCourse.get();
+        } else {
+            throw new EntityNotFoundException(Course.class, courseId);
+        }
+        User u = getCurrentUser().getUser();
+
+        log.warn("\u001B[33mUSER JOINING THE COURSE\u001B[0m");
+        log.warn("\u001B[33m" + u.getGithubLogin() + "\u001B[0m");
+        School s;
+        Optional<School> tempSchool = schoolRepository.findByName(targetCourse.getSchool());
+        if (tempSchool.isPresent()) {
+            s = tempSchool.get();
+        } else {
+            throw new EntityNotFoundException(School.class, targetCourse.getSchool());
+        }
+
+        String emailSufix = s.getAbbrev() + ".edu";
+
+        // GitHubUserApi ghUser = new GitHubUserApi(accessToken);
+        // log.warn("\u001B[33m"+ghUser.userEmails().toString()+"\u001B[0m");
+
+        ArrayList<String> emails = gitHubUserApi.userEmails();
+
+        boolean found = false;
+        String schoolEmail = "";
+        for (String email : emails) {
+            if (email.endsWith(emailSufix)) {
+                found = true;
+                schoolEmail = email;
+                break;
+            }
+        }
+
+        if (!found) {
+            throw new AccessDeniedException("User does not have a school email");
+        }
+
+        String netId = schoolEmail.split("@")[0];
+
+        Student stu = studentRepository.findByCourseIdAndStudentId(courseId, netId)
+                .orElse(null);
+
+        if (stu != null) {
+            throw new AccessDeniedException("User is already in the course");
+        }
+
+        // Check roster here
+
+        // Send org Invitation
+        try {
+            GitHubAppOrg org = gitHubApp.org(targetCourse.getGithubOrg());
+            String res = org.inviteUserToThisOrg(u.getGithubId());
+            log.info("\u001B[33m" + res + "\u001B[0m");
+        } catch (Exception e) {
+            log.error(e.toString());
+            throw new AccessDeniedException("Failed to invite user to org. Is this user already in the org?");
+        }
+
+        // Store in db
+        Student student = Student.builder()
+                .courseId(courseId)
+                .studentId(netId)
+                .email(schoolEmail)
+                .githubId(u.getGithubId())
+                .build();
+
+        studentRepository.save(student);
+        return GeneralOperationResp.builder().success(true).message("Joined Successfully").build();
     }
 
 }

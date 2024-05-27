@@ -20,6 +20,56 @@
     </properties>
     <dependencies>
         <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+            <version>0.10.5</version>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <version>0.10.5</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <version>0.10.5</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>r05</version>
+        </dependency>
+        <dependency>
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
+            <version>20240303</version>
+        </dependency>
+        <dependency>
+            <groupId>com.tianleyu</groupId>
+            <artifactId>github</artifactId>
+            <version>0.0.3</version>
+        </dependency>
+        <!-- <dependency>
+        <groupId>org.powermock</groupId>
+        <artifactId>powermock-module-junit4</artifactId>
+        <version>2.0.9</version>
+        <scope>test</scope>
+    </dependency>
+    <dependency>
+        <groupId>org.powermock</groupId>
+        <artifactId>powermock-api-mockito2</artifactId>
+        <version>2.0.9</version>
+        <scope>test</scope>
+    </dependency> -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <version>5.7.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
@@ -168,6 +218,7 @@
                         <exclude>**/edu/ucsb/cs156/organic/controllers/FrontendProxyController.*</exclude>
                         <exclude>**/edu/ucsb/cs156/organic/services/CurrentUserServiceImpl.*</exclude>
                         <exclude>**/edu/ucsb/cs156/organic/OrganicApplication.*</exclude>
+                        <exclude>**/edu/ucsb/cs156/organic/beans/OAuth2ClientBean.*</exclude><!-- This is internet code, I don't know how to test -->
                     </excludes>
                 </configuration>
                 <executions>
@@ -255,6 +306,9 @@
                         <param>edu.ucsb.cs156.organic.config.SecurityConfig</param>
                         <param>edu.ucsb.cs156.organic.config.SecurityConfig.MyCsrfRequestMatcher</param>
                         <param>edu.ucsb.cs156.organic.services.GrantedAuthoritiesService</param>
+                        <param>edu.ucsb.cs156.organic.beans.GitHubAppBean</param><!-- Excluded due to reasons similar to config classes above -->
+                        <param>edu.ucsb.cs156.organic.beans.OAuth2ClientBean</param><!-- Excluded due to reasons similar to config classes above -->
+                        <param>edu.ucsb.cs156.organic.beans.*</param><!-- Excluded due to reasons similar to config classes above -->
                     </excludedClasses>
                     <excludedTestClasses></excludedTestClasses>
                     <outputFormats>

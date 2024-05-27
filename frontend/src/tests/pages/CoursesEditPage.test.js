@@ -4,6 +4,7 @@ import { MemoryRouter } from "react-router-dom";
 import CoursesEditPage from "main/pages/CoursesEditPage";
 import { apiCurrentUserFixtures } from "fixtures/currentUserFixtures";
 import { systemInfoFixtures } from "fixtures/systemInfoFixtures";
+import { coursesFixtures } from "fixtures/coursesFixtures";
 import axios from "axios";
 import AxiosMockAdapter from "axios-mock-adapter";
 
@@ -48,7 +49,7 @@ describe("CoursesEditPage tests", () => {
             axiosMock.resetHistory();
             axiosMock.onGet("/api/currentUser").reply(200, apiCurrentUserFixtures.userOnly);
             axiosMock.onGet("/api/systemInfo").reply(200, systemInfoFixtures.showingNeither);
-            axiosMock.onGet("/api/courses/get", { params: { id: 17 } }).timeout();
+            axiosMock.onGet("/api/courses/get", { params: { id: 17 } }).reply(200, coursesFixtures.oneCourse);
         });
 
         const queryClient = new QueryClient();
@@ -188,7 +189,42 @@ describe("CoursesEditPage tests", () => {
 
         });
 
-       
+        test("Yes Github App tips!", async () => {
+            axiosMock.onGet("/api/courses/github", { params: { id: 17 } }).reply(200, {
+                githubAppInstalled: false
+            });
+            render(
+                <QueryClientProvider client={queryClient}>
+                    <MemoryRouter>
+                        <CoursesEditPage />
+                    </MemoryRouter>
+                </QueryClientProvider>
+            );
+    
+            await screen.findByTestId("CourseEdit-githubAppTips");
+
+            expect(screen.getByTestId("CourseEdit-githubAppTips")).toHaveStyle("color: red");
+    
+            expect(axiosMock.history.get.length).toBeGreaterThanOrEqual(2); // times called
+            const githubAppTips = screen.getByTestId("CourseEdit-githubAppTips");
+            expect(githubAppTips).toBeInTheDocument();
+        });
+    
+        test("No Github App tips!", async () => {
+            axiosMock.onGet("/api/courses/github", { params: { id: 17 } }).reply(200, {
+                githubAppInstalled: true
+            });
+            render(
+                <QueryClientProvider client={queryClient}>
+                    <MemoryRouter>
+                        <CoursesEditPage />
+                    </MemoryRouter>
+                </QueryClientProvider>
+            );
+            await screen.findByTestId("CoursesForm-name");
+            expect(screen.queryByTestId("CourseEdit-githubAppTips")).not.toBeInTheDocument();
+        });
+
+
     });
 });
-
