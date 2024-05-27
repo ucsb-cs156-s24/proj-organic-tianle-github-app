@@ -1,6 +1,6 @@
 import { Card } from 'react-bootstrap';
 
-export default function GitHubAppTips({ app }) {
+export default function GitHubAppTips({ app, org }) {
     return (<>
         <Card style={{ marginBottom: 20, marginTop: 20 }}>
             <Card.Body>
@@ -8,10 +8,10 @@ export default function GitHubAppTips({ app }) {
                 <Card.Text>
                     <ul>
                         <li>
-                            After you click <a href={"https://github.com/apps/"+app} target='_blank'>this link</a>, please install/configure and select your course organization to install it.
+                            After you click <a href={"https://github.com/apps/" + app} target='_blank'>this link</a>, please install/configure and select your course organization to install it.
                         </li>
                         <li>
-                            If you are successful you'll see the text "Okay, UCSB CS Linker was installed on the @ucsb-cs156-f24 account".
+                            If you are successful you'll see the text "Okay, UCSB CS Linker was installed on the @{org}".
                         </li>
                         <li>
                             Then you can return to this app.
