@@ -1,7 +1,7 @@
 import { Card } from 'react-bootstrap';
 
 export default function GitHubAppTips({ app, org }) {
-    return (<>
+    return (<div data-testid="CourseEdit-githubAppTips">
         <Card style={{ marginBottom: 20, marginTop: 20 }}>
             <Card.Body>
                 <Card.Title>Warning: Your organization does not seem to have our GitHub App installed</Card.Title>
@@ -21,5 +21,5 @@ export default function GitHubAppTips({ app, org }) {
                 </Card.Text>
             </Card.Body>
         </Card>
-    </>)
+    </div>)
 }
