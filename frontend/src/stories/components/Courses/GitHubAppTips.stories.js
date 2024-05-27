@@ -1,6 +1,5 @@
 import React from 'react';
 import GitHubAppTips from 'main/components/Courses/GitHubAppTips';
-import { coursesFixtures } from 'fixtures/coursesFixtures';
 
 export default {
     title: 'components/Courses/GitHubAppTips',
@@ -14,23 +13,14 @@ const Template = (args) => {
     )
 };
 
-export const Create = Template.bind({});
+export const Empty = Template.bind({});
 
-Create.args = {
-    buttonLabel: "Create",
-    submitAction: (data) => {
-        console.log("Submit was clicked with data: ", data);
-        window.alert("Submit was clicked with data: " + JSON.stringify(data));
-    }
+Empty.args = {
+    org: "", app: ""
 };
 
-export const Update = Template.bind({ org: "StoryOrg", app: "StoryApp" });
+export const StoryApp = Template.bind({});
 
-Update.args = {
-    initialContents: coursesFixtures.oneCourse,
-    buttonLabel: "Update",
-    submitAction: (data) => {
-        console.log("Submit was clicked with data: ", data);
-        window.alert("Submit was clicked with data: " + JSON.stringify(data));
-    }
+StoryApp.args = {
+    org: "StoryOrg", app: "StoryApp"
 };
