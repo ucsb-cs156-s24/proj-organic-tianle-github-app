@@ -17,7 +17,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Map;
-import com.tianleyu.github.GitHubApp;
+import edu.ucsb.cs156.github.GitHubApp;
 
 @ActiveProfiles("test")
 @Import(TestConfig.class)

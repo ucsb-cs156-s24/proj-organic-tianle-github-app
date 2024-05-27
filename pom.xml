@@ -46,11 +46,11 @@
             <artifactId>json</artifactId>
             <version>20240303</version>
         </dependency>
-        <dependency>
-            <groupId>com.tianleyu</groupId>
+        <!-- <dependency>
+            <groupId>edu.ucsb.cs156</groupId>
             <artifactId>github</artifactId>
             <version>0.0.3</version>
-        </dependency>
+        </dependency> -->
         <!-- <dependency>
         <groupId>org.powermock</groupId>
         <artifactId>powermock-module-junit4</artifactId>

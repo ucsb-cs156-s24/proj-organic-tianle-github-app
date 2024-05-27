@@ -9,8 +9,8 @@ import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.web.context.annotation.RequestScope;
 
-import com.tianleyu.github.GitHubToken;
-import com.tianleyu.github.GitHubUserApi;
+import edu.ucsb.cs156.github.GitHubToken;
+import edu.ucsb.cs156.github.GitHubUserApi;
 
 import lombok.extern.slf4j.Slf4j;
 

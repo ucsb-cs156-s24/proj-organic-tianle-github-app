@@ -4,7 +4,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import com.tianleyu.github.GitHubApp;
+import edu.ucsb.cs156.github.GitHubApp;
 
 @Configuration
 public class GitHubAppBean {
@@ -15,7 +15,7 @@ public class GitHubAppBean {
     @Value("${spring.security.oauth2.client.registration.github.client-secret}")
     private String clientSecret;
 
-    @Value("${com.tianleyu.github.pkfile}")
+    @Value("${edu.ucsb.cs156.github.pkfile}")
     private String clientPkPath;
 
     @Bean

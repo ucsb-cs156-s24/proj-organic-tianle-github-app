@@ -27,11 +27,11 @@ import java.util.Optional;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tianleyu.github.GitHubApp;
-import com.tianleyu.github.GitHubAppException;
-import com.tianleyu.github.GitHubAppOrg;
-import com.tianleyu.github.GitHubToken;
-import com.tianleyu.github.GitHubUserApi;
+import edu.ucsb.cs156.github.GitHubApp;
+import edu.ucsb.cs156.github.GitHubAppException;
+import edu.ucsb.cs156.github.GitHubAppOrg;
+import edu.ucsb.cs156.github.GitHubToken;
+import edu.ucsb.cs156.github.GitHubUserApi;
 
 import org.json.JSONObject;
 import org.junit.jupiter.api.Test;

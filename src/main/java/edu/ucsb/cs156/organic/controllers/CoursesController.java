@@ -38,12 +38,12 @@ import edu.ucsb.cs156.organic.entities.School;
 
 import org.springframework.security.access.AccessDeniedException;
 
-import com.tianleyu.github.GitHubApp;
-import com.tianleyu.github.GitHubAppException;
-import com.tianleyu.github.GitHubAppOrg;
-import com.tianleyu.github.GitHubToken;
-import com.tianleyu.github.GitHubUserApi;
-import com.tianleyu.github.JwtProvider;
+import edu.ucsb.cs156.github.GitHubApp;
+import edu.ucsb.cs156.github.GitHubAppException;
+import edu.ucsb.cs156.github.GitHubAppOrg;
+import edu.ucsb.cs156.github.GitHubToken;
+import edu.ucsb.cs156.github.GitHubUserApi;
+import edu.ucsb.cs156.github.JwtProvider;
 import org.kohsuke.github.GitHub;
 
 import java.time.LocalDateTime;
