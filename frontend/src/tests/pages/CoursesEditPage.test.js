@@ -191,7 +191,8 @@ describe("CoursesEditPage tests", () => {
 
         test("Yes Github App tips!", async () => {
             axiosMock.onGet("/api/courses/github", { params: { id: 17 } }).reply(200, {
-                githubAppInstalled: false
+                githubAppInstalled: false,
+                name: "Test"
             });
             render(
                 <QueryClientProvider client={queryClient}>
@@ -200,16 +201,23 @@ describe("CoursesEditPage tests", () => {
                     </MemoryRouter>
                 </QueryClientProvider>
             );
-    
+
             await screen.findByTestId("CourseEdit-githubAppTips");
 
             // expect(screen.getByTestId("CourseEdit-githubAppTips")).toHaveStyle("color: red");
-    
+
             expect(axiosMock.history.get.length).toBeGreaterThanOrEqual(2); // times called
             const githubAppTips = screen.getByTestId("CourseEdit-githubAppTips");
             expect(githubAppTips).toBeInTheDocument();
+            const githubAppTipsCard = screen.getByTestId("CourseEdit-GHAT-Card");
+            expect(githubAppTipsCard).toBeInTheDocument();
+            expect(githubAppTipsCard).toHaveStyle("margin-bottom: 20px");
+            expect(githubAppTipsCard).toHaveStyle("margin-top: 20px");
+            const githubAppTipsLink = screen.getByTestId("CourseEdit-GHAT-Link");
+            expect(githubAppTipsLink).toBeInTheDocument();
+            expect(githubAppTipsLink).toHaveAttribute("href", "https://github.com/apps/Test");
         });
-    
+
         test("No Github App tips!", async () => {
             axiosMock.onGet("/api/courses/github", { params: { id: 17 } }).reply(200, {
                 githubAppInstalled: true
