@@ -311,6 +311,7 @@
                         <param>edu.ucsb.cs156.organic.beans.OAuth2ClientBean</param><!-- Excluded due to reasons similar to config classes above -->
                         <param>edu.ucsb.cs156.organic.beans.*</param><!-- Excluded due to reasons similar to config classes above -->
                         <param>edu.ucsb.cs156.github.Utils</param><!-- Excluded since hard to test and mostly internet code -->
+                        <param>edu.ucsb.cs156.github.JwtProvider</param><!-- Can't mock system clock -->
                     </excludedClasses>
                     <excludedTestClasses></excludedTestClasses>
                     <outputFormats>
