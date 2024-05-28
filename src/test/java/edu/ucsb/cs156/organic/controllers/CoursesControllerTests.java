@@ -737,7 +737,7 @@ public class CoursesControllerTests extends ControllerTestCase {
         Map<String, String> responseMap = mapper.readValue(response.getResponse().getContentAsString(),
                 new TypeReference<Map<String, String>>() {
                 });
-        Map<String, String> expectedMap = Map.of("message", "Access denied", "type",
+        Map<String, String> expectedMap = Map.of("message", "Access Denied", "type",
                 "AccessDeniedException");
         assertEquals(expectedMap, responseMap);
     }
@@ -908,7 +908,7 @@ public class CoursesControllerTests extends ControllerTestCase {
         Map<String, String> responseMap = mapper.readValue(response.getResponse().getContentAsString(),
                 new TypeReference<Map<String, String>>() {
                 });
-        Map<String, String> expectedMap = Map.of("message", "Access denied", "type",
+        Map<String, String> expectedMap = Map.of("message", "Access Denied", "type",
                 "AccessDeniedException");
         assertEquals(expectedMap, responseMap);
     }
