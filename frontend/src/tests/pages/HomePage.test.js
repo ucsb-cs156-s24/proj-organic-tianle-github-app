@@ -46,7 +46,7 @@ describe("HomePage tests", () => {
         expect(title).toHaveAttribute("style", "font-size: 75px; border-radius: 7px; background-color: white; opacity: 0.9;");
     });
 
-    test('shows greeting for logged-in users with dynamic time of day', () => {
+    /*test('shows greeting for logged-in users with dynamic time of day', () => {
         axiosMock.onGet("/api/currentUser").reply(200, apiCurrentUserFixtures.userOnly); // Adjust this if needed
         render(
             <QueryClientProvider client={queryClient}>
@@ -61,6 +61,7 @@ describe("HomePage tests", () => {
             greetingElement.textContent
         ).toMatch(/Good (morning|afternoon|evening), cgaucho/); 
     });
+    */
 
     test('shows information for purpose of app', () => {
       axiosMock.onGet("/api/currentUser").reply(200, apiCurrentUserFixtures.userOnly); // Adjust this if needed
@@ -77,6 +78,23 @@ describe("HomePage tests", () => {
           infoElement.textContent
       ).toMatch(/This app is intended as a replacement for the ucsb-cs-github-linker app used in many courses at UCSB, as well as some courses at other universities./); 
   });
+
+  test('renders styles correctly', () => {
+    axiosMock.onGet("/api/currentUser").reply(200, apiCurrentUserFixtures.userOnly); // Adjust this if needed
+    render(
+        <QueryClientProvider client={queryClient}>
+            <MemoryRouter>
+                <HomePage />
+            </MemoryRouter>
+        </QueryClientProvider>
+    );
+
+    const infoElement = screen.getByTestId("info");
+    expect(infoElement).toHaveStyle('font-size: 12px');
+    expect(infoElement).toHaveStyle('border-radius: 7px');
+    expect(infoElement).toHaveStyle('background-color: white');
+    expect(infoElement).toHaveStyle('opacity: .9');
+});
     
     // test('renders greeting for non-logged-in users correctly', () => {
     //     // Mock the `useCurrentUser` hook to return a logged-out state
@@ -119,11 +137,11 @@ describe('HomePage greetings for not logged in users at different times of the d
       axiosMock.reset();
         });
     const testCases = [
-      { hour: 9, expectedGreeting: "Good morning, cgaucho" },
-      { hour: 14, expectedGreeting: "Good afternoon, cgaucho" },
-      { hour: 19, expectedGreeting: "Good evening, cgaucho" },
-      { hour: 12, expectedGreeting: "Good morning, cgaucho" },
-      { hour: 18, expectedGreeting: "Good afternoon, cgaucho" },
+      { hour: 9, expectedGreeting: "Good morning" },
+      { hour: 14, expectedGreeting: "Good afternoon" },
+      { hour: 19, expectedGreeting: "Good evening" },
+      { hour: 12, expectedGreeting: "Good morning" },
+      { hour: 18, expectedGreeting: "Good afternoon" },
     ];
   
     testCases.forEach(({ hour, expectedGreeting }) => {
@@ -143,11 +161,9 @@ describe('HomePage greetings for not logged in users at different times of the d
         expect(greetingElement.textContent).toMatch(new RegExp(expectedGreeting, 'i'));
       });
     });
-  });
+});
 
-
-
-  describe('HomePage greetings for logged-in users at different times of the day', () => {
+describe('HomePage greetings for logged-in users at different times of the day', () => {
     const originalDate = global.Date;
     const axiosMock = new AxiosMockAdapter(axios);
     const queryClient = new QueryClient();
@@ -205,5 +221,5 @@ describe('HomePage greetings for not logged in users at different times of the d
         expect(greetingElement.textContent).toMatch(new RegExp(expectedGreeting, 'i'));
       });
     });
-  });
+});
    
