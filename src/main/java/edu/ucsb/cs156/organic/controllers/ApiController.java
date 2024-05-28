@@ -74,7 +74,7 @@ public abstract class ApiController {
         mapper.setAnnotationIntrospector(new JacksonAnnotationIntrospector() {
             @Override
             public boolean hasIgnoreMarker(final AnnotatedMember m) {
-                return super.hasIgnoreMarker(m) || m.getName().contains("Mockito");
+                return super.hasIgnoreMarker(m); //|| m.getName().contains("Mockito");
             }
         });
         return mapper;
