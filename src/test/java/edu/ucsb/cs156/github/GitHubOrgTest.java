@@ -119,7 +119,9 @@ public class GitHubOrgTest {
             mockedUtils.when(() -> Utils.post(anyString(), anyString(), anyString(), any(HttpClient.class)))
                     .thenReturn(response2);
 
-            gitHubAppOrg.post("/some/url", "This is some str");
+            String res = gitHubAppOrg.post("/some/url", "This is some str").body();
+
+            assertEquals("{\"token\":\"1232123\",\"expires_at\":\"2021-09-01T00:00:00Z\"}", res);
 
             Field token = gitHubAppOrg.getClass().getDeclaredField("accessTokenExpiration");
             token.setAccessible(true);
