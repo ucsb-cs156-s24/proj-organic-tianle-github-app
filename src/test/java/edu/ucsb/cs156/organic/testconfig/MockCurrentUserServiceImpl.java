@@ -19,7 +19,6 @@ import java.sql.Timestamp; //importing this because we dont need instant we need
 import edu.ucsb.cs156.organic.entities.User;
 import edu.ucsb.cs156.organic.entities.UserEmail;
 import edu.ucsb.cs156.organic.services.CurrentUserServiceImpl;
-import liquibase.pro.packaged.em;
 
 import static org.mockito.Mockito.when;
 

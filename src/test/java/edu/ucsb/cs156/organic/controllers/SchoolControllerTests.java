@@ -63,7 +63,6 @@ import edu.ucsb.cs156.organic.errors.EntityNotFoundException;
 import edu.ucsb.cs156.organic.repositories.jobs.JobsRepository;
 import edu.ucsb.cs156.organic.services.jobs.JobService;
 import edu.ucsb.cs156.organic.services.CurrentUserService;
-import liquibase.pro.packaged.W;
 import lombok.With;
 import lombok.extern.slf4j.Slf4j;
 
