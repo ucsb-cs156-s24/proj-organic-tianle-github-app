@@ -63,7 +63,8 @@ public class JobsController extends ApiController {
     @PostMapping("/launch/testjob")
     public Job launchTestJob(
         @Parameter(name="fail") @RequestParam Boolean fail, 
-        @Parameter(name="sleepMs") @RequestParam Integer sleepMs
+        @Parameter(name="sleepMs") @RequestParam Integer sleepMs,
+        @Parameter(name="id") @RequestParam Integer id
     ) {
         TestJob testJob = TestJob.builder()
         .fail(fail)
@@ -75,6 +76,6 @@ public class JobsController extends ApiController {
             throw new IllegalArgumentException("sleepMs must be between 0 and 60000");
         }
 
-        return jobService.runAsJob(testJob);
+        return jobService.runAsJob(testJob, id);
     }
 }
