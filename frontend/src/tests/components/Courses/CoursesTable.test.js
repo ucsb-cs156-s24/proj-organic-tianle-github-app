@@ -110,8 +110,8 @@ describe("UserTable tests", () => {
 
     );
 
-    const expectedHeaders = ["id", "Name", "School", "Term", "StartDate", "EndDate", "GitHub Org"];
-    const expectedFields = ["id", "name", "school", "term", "startDate", "endDate", "githubOrg"];
+    const expectedHeaders = ["id", "Name", "School", "Term", "StartDate", "EndDate", "GitHub Org", "GitHub App Installed"];
+    const expectedFields = ["id", "name", "school", "term", "startDate", "endDate", "githubOrg", "githubAppInstalled"];
     const testId = "CoursesTable";
 
     expectedHeaders.forEach((headerText) => {
@@ -171,6 +171,10 @@ describe("UserTable tests", () => {
 
     expect(screen.getByTestId(`${testId}-cell-row-0-col-id`)).toHaveTextContent("1");
     expect(screen.getByTestId(`${testId}-cell-row-1-col-id`)).toHaveTextContent("2");
+
+    expect(screen.getByTestId(`${testId}-cell-row-0-col-githubAppInstalled`)).toHaveTextContent("⚠️");
+    expect(screen.getByTestId(`${testId}-cell-row-1-col-githubAppInstalled`)).toHaveTextContent("✔️");
+
 
     const joinButton = screen.queryByTestId(`${testId}-cell-row-0-col-Join-button`);
     expect(joinButton).toBeInTheDocument(); 
