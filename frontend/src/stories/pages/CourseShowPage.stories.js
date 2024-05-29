@@ -4,18 +4,17 @@ import { systemInfoFixtures } from "fixtures/systemInfoFixtures";
 import { coursesFixtures } from "fixtures/coursesFixtures";
 import { rest } from "msw";
 
-import CourseShowPage from "main/pages/CourseShowPage";
+import CoursesShowPage from "main/pages/CoursesShowPage";
 
 export default {
-    title: 'pages/Course/CourseShowPage',
-    component: CourseShowPage
+    title: 'pages/CourseShowPage',
+    component: CoursesShowPage
 };
 
-const Template = () => <CourseShowPage/>;
+const Template = () => <CoursesShowPage storybook={true}/>;
 
-export const OneItemsAdminUser = Template.bind({});
-
-OneItemsAdminUser.parameters = {
+export const Default = Template.bind({});
+Default.parameters = {
     msw: [
         rest.get('/api/currentUser', (_req, res, ctx) => {
             return res( ctx.json(apiCurrentUserFixtures.adminUser));
