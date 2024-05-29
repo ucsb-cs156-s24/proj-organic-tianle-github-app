@@ -113,7 +113,6 @@ describe("SchoolEditPage tests", () => {
 
             await screen.findByTestId("SchoolForm-abbrev");
 
-            //const idField = screen.getByTestId("SchoolForm-id");
             const nameField = screen.getByTestId("SchoolForm-name");
             const abbrevField = screen.getByTestId("SchoolForm-abbrev");
             const termRegexField = screen.getByTestId("SchoolForm-termRegex");
@@ -121,7 +120,6 @@ describe("SchoolEditPage tests", () => {
             const termErrorField = screen.getByTestId("SchoolForm-termError");
             const submitButton = screen.getByTestId("SchoolForm-submit");
 
-            //expect(idField).toHaveValue("17");
             expect(nameField).toHaveValue("University of California, Santa Barbara");
             expect(abbrevField).toHaveValue("ucsb");
             expect(termRegexField).toHaveValue("regexTest");
@@ -142,7 +140,6 @@ describe("SchoolEditPage tests", () => {
 
             await screen.findByTestId("SchoolForm-abbrev");
 
-            //const idField = screen.getByTestId("SchoolForm-id");
             const nameField = screen.getByTestId("SchoolForm-name");
             const abbrevField = screen.getByTestId("SchoolForm-abbrev");
             const termRegexField = screen.getByTestId("SchoolForm-termRegex");
@@ -150,7 +147,6 @@ describe("SchoolEditPage tests", () => {
             const termErrorField = screen.getByTestId("SchoolForm-termError");
             const submitButton = screen.getByTestId("SchoolForm-submit");
 
-            //expect(idField).toHaveValue("17");
             expect(nameField).toHaveValue("University of California, Santa Barbara");
             expect(abbrevField).toHaveValue("ucsb");
             expect(termRegexField).toHaveValue("regexTest");
@@ -169,7 +165,7 @@ describe("SchoolEditPage tests", () => {
             expect(mockToast).toBeCalledWith("School Updated - abbrev: ucsb name: University of California, Sha Bi");
             expect(mockNavigate).toBeCalledWith({ "to": "/admin/schools" });
 
-            expect(axiosMock.history.put.length).toBe(1); // times called
+            expect(axiosMock.history.put.length).toBe(1);
             expect(axiosMock.history.put[0].params).toEqual({ abbrev: "ucsb"});
             expect(axiosMock.history.put[0].data).toEqual(JSON.stringify({ name: "University of California, Sha Bi", termRegex: "regexTest2", termDescription: "descTest2", termError: "errTest2"}));
 
