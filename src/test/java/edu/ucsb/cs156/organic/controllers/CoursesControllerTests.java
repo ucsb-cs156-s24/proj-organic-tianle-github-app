@@ -1116,6 +1116,7 @@ public class CoursesControllerTests extends ControllerTestCase {
         String expectedJson = mapper.writeValueAsString(o);
         String responseString = response.getResponse().getContentAsString();
         assertEquals(expectedJson, responseString);
+        assertEquals(123, course2.getGithubAppInstallationId());
     }
 
     @WithMockUser(roles = { "USER" })
