@@ -959,8 +959,12 @@ public class CoursesControllerTests extends ControllerTestCase {
     @Test
     public void admin_can_query_github_app_status() throws Exception {
         // arrange
-        when(courseRepository.findById(eq(1L))).thenReturn(Optional.of(course1));
-        when(gitHubApp.org(anyString())).thenReturn(null);
+        Course course2 = course1;
+        GitHubAppOrg tempOrg = mock(GitHubAppOrg.class);
+        tempOrg.instId = "123";
+        course2.setGithubAppInstallationId(0);
+        when(courseRepository.findById(eq(1L))).thenReturn(Optional.of(course2));
+        when(gitHubApp.org(anyString())).thenReturn(tempOrg);
         when(gitHubApp.appInfo()).thenReturn(new JSONObject("{\"slug\":\"123\"}"));
 
         // act
@@ -986,9 +990,13 @@ public class CoursesControllerTests extends ControllerTestCase {
                 .id(1L)
                 .courseId(course1.getId())
                 .build();
-        when(courseRepository.findById(eq(1L))).thenReturn(Optional.of(course1));
-        when(gitHubApp.org(anyString())).thenReturn(null);
         when(courseStaffRepository.findByCourseIdAndGithubId(any(), any())).thenReturn(Optional.of(courseStaff1));
+        Course course2 = course1;
+        GitHubAppOrg tempOrg = mock(GitHubAppOrg.class);
+        tempOrg.instId = "123";
+        course2.setGithubAppInstallationId(0);
+        when(courseRepository.findById(eq(1L))).thenReturn(Optional.of(course2));
+        when(gitHubApp.org(anyString())).thenReturn(tempOrg);
         when(gitHubApp.appInfo()).thenReturn(new JSONObject("{\"slug\":\"123\"}"));
 
         // act
