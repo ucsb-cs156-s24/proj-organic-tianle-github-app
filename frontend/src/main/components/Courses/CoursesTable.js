@@ -80,7 +80,7 @@ export default function CoursesTable({ courses, currentUser }) {
     const coursesMapped = courses.map((course) => {
         return {
             ...course,
-            githubAppInstalled: course.githubAppInstallationId ? "✔️" : "❌",
+            githubAppInstalled: course.githubAppInstallationId ? "✔️" : "⚠️",
         };
     })
 
@@ -88,6 +88,7 @@ export default function CoursesTable({ courses, currentUser }) {
         <>
             <div>Total Courses: {coursesMapped.length}</div>
             <OurTable data={coursesMapped} columns={columns} testid={"CoursesTable"} />
+            <p>If you see a ⚠️ next to the github org label, it means you need to install the github app in your course organization. Click the edit button to do that.</p>
         </>
     );
 };
