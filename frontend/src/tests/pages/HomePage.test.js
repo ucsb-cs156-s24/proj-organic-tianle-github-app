@@ -46,23 +46,6 @@ describe("HomePage tests", () => {
         expect(title).toHaveAttribute("style", "font-size: 75px; border-radius: 7px; background-color: white; opacity: 0.9;");
     });
 
-    /*test('shows greeting for logged-in users with dynamic time of day', () => {
-        axiosMock.onGet("/api/currentUser").reply(200, apiCurrentUserFixtures.userOnly); // Adjust this if needed
-        render(
-            <QueryClientProvider client={queryClient}>
-                <MemoryRouter>
-                    <HomePage />
-                </MemoryRouter>
-            </QueryClientProvider>
-        );
-    
-        const greetingElement = screen.getByTestId("homePage-title");
-        expect(
-            greetingElement.textContent
-        ).toMatch(/Good (morning|afternoon|evening), cgaucho/); 
-    });
-    */
-
     test('shows information for purpose of app', () => {
       axiosMock.onGet("/api/currentUser").reply(200, apiCurrentUserFixtures.userOnly); // Adjust this if needed
       render(
