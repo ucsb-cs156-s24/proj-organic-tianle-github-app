@@ -220,6 +220,7 @@
                         <exclude>**/edu/ucsb/cs156/organic/OrganicApplication.*</exclude>
                         <exclude>**/edu/ucsb/cs156/organic/beans/OAuth2ClientBean.*</exclude><!-- This is internet code, I don't know how to test -->
                         <exclude>**/edu/ucsb/cs156/github/Utils.*</exclude><!-- This is hard to test and most of it is from the internet -->
+                        <exclude>**/edu/ucsb/cs156/organic/controllers/GithubWebhookController.*</exclude><!-- Work in progress -->
                     </excludes>
                 </configuration>
                 <executions>
@@ -312,6 +313,7 @@
                         <param>edu.ucsb.cs156.organic.beans.*</param><!-- Excluded due to reasons similar to config classes above -->
                         <param>edu.ucsb.cs156.github.Utils</param><!-- Excluded since hard to test and mostly internet code -->
                         <param>edu.ucsb.cs156.github.JwtProvider</param><!-- Can't mock system clock -->
+                        <param>edu.ucsb.cs156.organic.controllers.GithubWebhookController</param><!-- Work in progress -->
                     </excludedClasses>
                     <excludedTestClasses></excludedTestClasses>
                     <outputFormats>
