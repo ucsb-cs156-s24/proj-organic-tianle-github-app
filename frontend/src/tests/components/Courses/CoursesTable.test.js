@@ -307,7 +307,7 @@ describe("UserTable tests", () => {
 
     );
 
-    const idLink = screen.getByTestId(`CoursesTable-cell-row-0-col-id`).querySelector('a');
+    const idLink = screen.getByTestId(`linkToCoursesPage-1`);
     expect(idLink).toBeInTheDocument();
     expect(idLink.getAttribute('href')).toBe('/courses/1');
   });
