@@ -13,9 +13,9 @@ export default {
 
 const Template = () => <CourseShowPage/>;
 
-export const ThreeItemsAdminUser = Template.bind({});
+export const OneItemsAdminUser = Template.bind({});
 
-ThreeItemsAdminUser.parameters = {
+OneItemsAdminUser.parameters = {
     msw: [
         rest.get('/api/currentUser', (_req, res, ctx) => {
             return res( ctx.json(apiCurrentUserFixtures.adminUser));
@@ -24,7 +24,7 @@ ThreeItemsAdminUser.parameters = {
             return res(ctx.json(systemInfoFixtures.showingNeither));
         }),
         rest.get('/api/courses/get', (_req, res, ctx) => {
-            return res(ctx.json(coursesFixtures.threeCourses)[0]);
+            return res(ctx.json(coursesFixtures.oneCourse));
         }),
     ],
 }

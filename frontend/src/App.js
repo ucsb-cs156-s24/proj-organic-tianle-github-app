@@ -16,6 +16,7 @@ import SchoolIndexPage from "main/pages/SchoolIndexPage";
 import CoursesCreatePage from "main/pages/CoursesCreatePage";
 import CourseIndexPage from "main/pages/CourseIndexPage";
 
+
 import { hasRole, useCurrentUser } from "main/utils/currentUser";
 import NotFoundPage from "main/pages/NotFoundPage";
 

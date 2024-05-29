@@ -37,6 +37,7 @@ import React from "react";
          {
              Header: 'id',
              accessor: 'id',
+             Cell: ({ value }) => <a href={`/courses/${value}`}>{value}</a>,
          },
          {
              Header: 'Name',
