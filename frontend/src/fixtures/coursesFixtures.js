@@ -6,17 +6,19 @@ const coursesFixtures = {
         "term": "F23",
         "startDate": "2023-09-24T12:00:00",
         "endDate": "2023-12-15T12:00:00",
-        "githubOrg": "ucsb-cs156-f23"
+        "githubOrg": "ucsb-cs156-f23",
+        "githubAppInstallationId": 0
     },
     threeCourses: [
-        { 
+        {
             "id": 1,
             "name": "CS156",
             "school": "UCSB",
             "term": "F23",
             "startDate": "2023-09-24T12:00:00",
             "endDate": "2023-12-15T12:00:00",
-            "githubOrg": "ucsb-cs156-f23"
+            "githubOrg": "ucsb-cs156-f23",
+            "githubAppInstallationId": 0
         },
         {
             "id": 2,
@@ -25,7 +27,8 @@ const coursesFixtures = {
             "term": "W24",
             "startDate": "2024-01-08T12:00:00",
             "endDate": "2024-03-22T12:00:00",
-            "githubOrg": "ucsb-cs185-w24"
+            "githubOrg": "ucsb-cs185-w24",
+            "githubAppInstallationId": 1
         },
         {
             "id": 3,
@@ -34,7 +37,8 @@ const coursesFixtures = {
             "term": "S24",
             "startDate": "2024-04-01T12:00:00",
             "endDate": "2024-06-14T12:00:00",
-            "githubOrg": "ucsb-cs170-s24"
+            "githubOrg": "ucsb-cs170-s24",
+            "githubAppInstallationId": 2
         }
     ]
 };
