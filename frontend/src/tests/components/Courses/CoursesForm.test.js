@@ -25,7 +25,7 @@ describe("CoursesForm tests", () => {
         jest.clearAllMocks();
         axiosMock.reset();
         axiosMock.resetHistory();
-        axiosMock.onGet("/api/schools/all").reply(200, [{ abbrev: "UCSB", name: "UCSB" }]);
+        axiosMock.onGet("/api/schools/all").reply(200, [{},{ abbrev: "UCSB", name: "UCSB" }]);
     });
     const queryClient = new QueryClient();
 
@@ -84,7 +84,7 @@ describe("CoursesForm tests", () => {
 
         await screen.findByText(/Name is required./);
         expect(screen.getByText(/Name is required/)).toBeInTheDocument();
-        // expect(screen.getByText(/School is required./)).toBeInTheDocument();
+        expect(screen.getByText(/School is required./)).toBeInTheDocument();
         expect(screen.getByText(/Term is required./)).toBeInTheDocument();
         expect(screen.getByText(/StartDate date is required./)).toBeInTheDocument();
         expect(screen.getByText(/EndDate date is required./)).toBeInTheDocument();
