@@ -295,6 +295,7 @@ public class CoursesController extends ApiController {
             course.setGithubAppInstallationId(Long.parseLong(org.instId));
         } catch (Exception e) {
             // Github App not installed
+            log.error("CAUGHT EXCEPTION \u001b[31m" + e.toString() + "\u001b[0m");
         }
 
         course = courseRepository.save(course);

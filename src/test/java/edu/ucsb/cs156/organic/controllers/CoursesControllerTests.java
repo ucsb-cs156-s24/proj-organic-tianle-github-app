@@ -310,6 +310,50 @@ public class CoursesControllerTests extends ControllerTestCase {
         assertEquals(expectedJson, responseString);
     }
 
+    @WithMockUser(roles = { "ADMIN", "USER" })
+    @Test
+    public void an_admin_user_can_post_a_new_course_with_gha_ok() throws Exception {
+        // arrange
+        GitHubAppOrg tempOrg = mock(GitHubAppOrg.class);
+        tempOrg.instId = "123";
+        when(gitHubApp.org(any())).thenReturn(tempOrg);
+
+        Course courseBefore = Course.builder()
+                .name("CS16")
+                .school("UCSB")
+                .term("F23")
+                .startDate(LocalDateTime.parse("2023-09-01T00:00:00"))
+                .endDate(LocalDateTime.parse("2023-12-31T00:00:00"))
+                .githubOrg("ucsb-cs16-f23")
+                .githubAppInstallationId(123)
+                .build();
+
+        Course courseAfter = Course.builder()
+                .id(222L)
+                .name("CS16")
+                .school("UCSB")
+                .term("F23")
+                .startDate(LocalDateTime.parse("2023-09-01T00:00:00"))
+                .endDate(LocalDateTime.parse("2023-12-31T00:00:00"))
+                .githubOrg("ucsb-cs16-f23")
+                .githubAppInstallationId(123)
+                .build();
+
+        when(courseRepository.save(eq(courseBefore))).thenReturn(courseAfter);
+
+        // act
+        MvcResult response = mockMvc.perform(
+                post("/api/courses/post?name=CS16&school=UCSB&term=F23&startDate=2023-09-01T00:00:00&endDate=2023-12-31T00:00:00&githubOrg=ucsb-cs16-f23")
+                        .with(csrf()))
+                .andExpect(status().isOk()).andReturn();
+
+        // assert
+        verify(courseRepository, times(1)).save(courseBefore);
+        String expectedJson = mapper.writeValueAsString(courseAfter);
+        String responseString = response.getResponse().getContentAsString();
+        assertEquals(expectedJson, responseString);
+    }
+
     @WithMockUser(roles = { "INSTRUCTOR", "USER" })
     @Test
     public void an_instructor_can_post_a_new_course() throws Exception {
@@ -620,6 +664,39 @@ public class CoursesControllerTests extends ControllerTestCase {
 
         when(courseRepository.findById(eq(courseBefore.getId()))).thenReturn(Optional.of(courseBefore));
         when(courseRepository.save(eq(courseAfter))).thenReturn(courseAfter);
+
+        String urlTemplate = String.format(
+                "/api/courses/update?id=%d&name=%s&school=%s&term=%s&startDate=%s&endDate=%s&githubOrg=%s",
+                courseAfter.getId(), courseAfter.getName(), courseAfter.getSchool(), courseAfter.getTerm(),
+                courseAfter.getStartDate().toString(), courseAfter.getEndDate().toString(), courseAfter.getGithubOrg());
+        MvcResult response = mockMvc.perform(
+                put(urlTemplate)
+                        .with(csrf()))
+                .andExpect(status().isOk()).andReturn();
+
+        // assert
+        verify(courseRepository, times(1)).save(courseBefore);
+        String expectedJson = mapper.writeValueAsString(courseAfter);
+        String responseString = response.getResponse().getContentAsString();
+        assertEquals(expectedJson, responseString);
+    }
+
+    @WithMockUser(roles = { "ADMIN", "USER" })
+    @Test
+    public void an_admin_user_can_update_a_course_with_gha_ok() throws Exception {
+        // arrange
+
+        Course courseBefore = course1;
+
+        Course courseAfter = course2;
+        courseAfter.setGithubAppInstallationId(123);
+        courseAfter.setSchool("UCSD");
+
+        when(courseRepository.findById(eq(courseBefore.getId()))).thenReturn(Optional.of(courseBefore));
+        when(courseRepository.save(eq(courseAfter))).thenReturn(courseAfter);
+        GitHubAppOrg tempOrg = mock(GitHubAppOrg.class);
+        tempOrg.instId = "123";
+        when(gitHubApp.org(any())).thenReturn(tempOrg);
 
         String urlTemplate = String.format(
                 "/api/courses/update?id=%d&name=%s&school=%s&term=%s&startDate=%s&endDate=%s&githubOrg=%s",
@@ -974,6 +1051,33 @@ public class CoursesControllerTests extends ControllerTestCase {
         // assert
         verify(courseRepository, times(1)).findById(eq(1L));
         verify(gitHubApp, times(1)).org(eq("ucsb-cs156-f23"));
+
+        OrgStatus o = OrgStatus.builder().org("ucsb-cs156-f23").githubAppInstalled(true).name("123").build();
+
+        String expectedJson = mapper.writeValueAsString(o);
+        String responseString = response.getResponse().getContentAsString();
+        assertEquals(expectedJson, responseString);
+    }
+
+    @WithMockUser(roles = { "ADMIN" })
+    @Test
+    public void admin_can_query_github_app_status_with_cache() throws Exception {
+        // arrange
+        Course course2 = course1;
+        // GitHubAppOrg tempOrg = mock(GitHubAppOrg.class);
+        // tempOrg.instId = "123";
+        course2.setGithubAppInstallationId(123);
+        when(courseRepository.findById(eq(1L))).thenReturn(Optional.of(course2));
+        // when(gitHubApp.org(anyString())).thenReturn(tempOrg);
+        when(gitHubApp.appInfo()).thenReturn(new JSONObject("{\"slug\":\"123\"}"));
+
+        // act
+        MvcResult response = mockMvc.perform(get("/api/courses/github?id=1"))
+                .andExpect(status().isOk()).andReturn();
+
+        // assert
+        verify(courseRepository, times(1)).findById(eq(1L));
+        // verify(gitHubApp, times(1)).org(eq("ucsb-cs156-f23"));
 
         OrgStatus o = OrgStatus.builder().org("ucsb-cs156-f23").githubAppInstalled(true).name("123").build();
 
