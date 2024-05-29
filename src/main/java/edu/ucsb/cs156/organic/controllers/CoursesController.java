@@ -141,16 +141,18 @@ public class CoursesController extends ApiController {
         }
         JSONObject appInfo = gitHubApp.appInfo();
         String githubOrg = course.getGithubOrg();
-        try {
-            log.error("QUERY FOR OGR: " + githubOrg);
-            GitHubAppOrg org = gitHubApp.org(githubOrg);
-        } catch (Exception e) {
-            log.error(e.toString());
-            return OrgStatus.builder()
-                    .org(githubOrg)
-                    .githubAppInstalled(false)
-                    .name(appInfo.getString("slug"))
-                    .build();
+        if (course.getGithubAppInstallationId() == 0) {
+            try {
+                GitHubAppOrg org = gitHubApp.org(githubOrg);
+                course.setGithubAppInstallationId(Long.parseLong(org.instId));
+                courseRepository.save(course);
+            } catch (Exception e) {
+                return OrgStatus.builder()
+                        .org(githubOrg)
+                        .githubAppInstalled(false)
+                        .name(appInfo.getString("slug"))
+                        .build();
+            }
         }
         return OrgStatus.builder()
                 .org(githubOrg)
@@ -178,7 +180,14 @@ public class CoursesController extends ApiController {
                 .startDate(startDate)
                 .endDate(endDate)
                 .githubOrg(githubOrg)
+                .githubAppInstallationId(0)
                 .build();
+        try {
+            GitHubAppOrg org = gitHubApp.org(githubOrg);
+            course.setGithubAppInstallationId(Long.parseLong(org.instId));
+        } catch (Exception e) {
+            // Github App not installed
+        }
 
         Course savedCourse = courseRepository.save(course);
         User u = getCurrentUser().getUser();
@@ -280,6 +289,12 @@ public class CoursesController extends ApiController {
         course.setStartDate(startDate);
         course.setEndDate(endDate);
         course.setGithubOrg(githubOrg);
+        try {
+            GitHubAppOrg org = gitHubApp.org(githubOrg);
+            course.setGithubAppInstallationId(Long.parseLong(org.instId));
+        } catch (Exception e) {
+            // Github App not installed
+        }
 
         course = courseRepository.save(course);
         log.info("course={}", course);

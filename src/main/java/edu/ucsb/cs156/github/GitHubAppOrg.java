@@ -10,7 +10,7 @@ import org.json.*;
 public class GitHubAppOrg {
     public String orgId;
     private GitHubApp app;
-    private String instId;
+    public String instId;
     private String accessToken;
     private LocalDate accessTokenExpiration;
 

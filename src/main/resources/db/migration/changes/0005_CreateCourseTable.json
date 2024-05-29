@@ -67,6 +67,11 @@
                   "name": "TERM",
                   "type": "VARCHAR(255)"
                 }
+              },{
+                "column": {
+                  "name": "GITHUB_APP_INSTALLATION_ID",
+                  "type": "BIGINT"
+                }
               }]
             ,
             "tableName": "COURSES"
