@@ -36,7 +36,7 @@ Please note that things gets a little bit different in the production environmen
 6. 
 **If you run into errors, or it's just simply not working, please try to change the permission of your `.github.pk.der` file to be readable to the dokku user**
 
-If the application failed to start due to connection refused, please try to increase the wait time for dokke via `dokku confit:set <yourapp> DOKKU_DEFAULT_CHECKS_WAIT=20`.
+If the application failed to start due to connection refused, please try to increase the wait time for dokke via `dokku config:set <yourapp> DOKKU_DEFAULT_CHECKS_WAIT=20`.
 
 Please refer to this documentation for details: https://dokku.com/docs~v0.8.2/deployment/zero-downtime-deploys/
 
