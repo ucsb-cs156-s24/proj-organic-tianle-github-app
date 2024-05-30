@@ -29,8 +29,8 @@ describe("UserTable tests", () => {
 
     );
 
-    const expectedHeaders = ["Abbrev", "Name", "TermRegex", "TermDescription", "TermError"];
-    const expectedFields = ["abbrev", "name", "termRegex", "termDescription", "termError"];
+    const expectedHeaders = ["Abbrev", "Name", "TermRegex", "TermDescription"];
+    const expectedFields = ["abbrev", "name", "termRegex", "termDescription"];
     const testId = "SchoolTable";
 
     expectedHeaders.forEach((headerText) => {
@@ -60,8 +60,8 @@ describe("UserTable tests", () => {
     // arrange
     const currentUser = currentUserFixtures.adminUser;
 
-    const expectedHeaders = ["Abbrev", "Name", "TermRegex", "TermDescription", "TermError"];
-    const expectedFields = ["abbrev", "name", "termRegex", "termDescription", "termError"];
+    const expectedHeaders = ["Abbrev", "Name", "TermRegex", "TermDescription"];
+    const expectedFields = ["abbrev", "name", "termRegex", "termDescription"];
     const testId = "SchoolTable";
 
     // act
@@ -99,8 +99,8 @@ describe("UserTable tests", () => {
 
     );
 
-    const expectedHeaders = ["Abbrev", "Name", "TermRegex", "TermDescription", "TermError"];
-    const expectedFields = ["abbrev", "name", "termRegex", "termDescription", "termError"];
+    const expectedHeaders = ["Abbrev", "Name", "TermRegex", "TermDescription"];
+    const expectedFields = ["abbrev", "name", "termRegex", "termDescription"];
     const testId = "SchoolTable";
 
     expectedHeaders.forEach((headerText) => {
