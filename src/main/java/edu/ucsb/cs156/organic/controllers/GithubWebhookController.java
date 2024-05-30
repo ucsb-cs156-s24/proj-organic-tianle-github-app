@@ -16,7 +16,7 @@ import java.nio.file.AccessDeniedException;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 
 @Tag(name = "Courses")
 @RequestMapping("/githubwebhook")
