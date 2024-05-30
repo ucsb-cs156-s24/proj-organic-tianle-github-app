@@ -71,7 +71,6 @@ import edu.ucsb.cs156.organic.repositories.UserRepository;
 import edu.ucsb.cs156.organic.repositories.jobs.JobsRepository;
 import edu.ucsb.cs156.organic.services.jobs.JobService;
 import edu.ucsb.cs156.organic.services.CurrentUserService;
-import liquibase.pro.packaged.W;
 import lombok.With;
 import lombok.extern.slf4j.Slf4j;
 
@@ -853,7 +852,7 @@ public class CoursesControllerTests extends ControllerTestCase {
         Map<String, String> responseMap = mapper.readValue(response.getResponse().getContentAsString(),
                 new TypeReference<Map<String, String>>() {
                 });
-        Map<String, String> expectedMap = Map.of("message", "Access is denied", "type",
+        Map<String, String> expectedMap = Map.of("message", "Access Denied", "type",
                 "AccessDeniedException");
         assertEquals(expectedMap, responseMap);
     }
@@ -1027,7 +1026,7 @@ public class CoursesControllerTests extends ControllerTestCase {
         Map<String, String> responseMap = mapper.readValue(response.getResponse().getContentAsString(),
                 new TypeReference<Map<String, String>>() {
                 });
-        Map<String, String> expectedMap = Map.of("message", "Access is denied", "type",
+        Map<String, String> expectedMap = Map.of("message", "Access Denied", "type",
                 "AccessDeniedException");
         assertEquals(expectedMap, responseMap);
     }
