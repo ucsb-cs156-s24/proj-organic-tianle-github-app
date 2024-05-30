@@ -287,4 +287,26 @@ public class StudentsControllerTests extends ControllerTestCase {
                 verify(studentRepository, atLeastOnce()).save(eq(student3Before));
         }
 
+        @WithMockUser(roles = { "USER" })
+        @Test
+        public void user_can_post_student_only_if_they_are_instructor() throws Exception {
+    
+            // arrange
+    
+            ArrayList<Course> expectedCourses = new ArrayList<>();
+            expectedCourses.addAll(Arrays.asList(course1, course2));
+    
+            when(courseRepository.findCoursesStaffedByUser(any())).thenReturn(expectedCourses);
+    
+            // act
+            MvcResult response = mockMvc.perform(get("/api/courses/all"))
+                    .andExpect(status().isOk()).andReturn();
+    
+            // assert
+            verify(courseRepository, atLeastOnce()).findCoursesStaffedByUser(any());
+            String expectedJson = mapper.writeValueAsString(expectedCourses);
+            String responseString = response.getResponse().getContentAsString();
+            assertEquals(expectedJson, responseString);
+        }
+
 }
