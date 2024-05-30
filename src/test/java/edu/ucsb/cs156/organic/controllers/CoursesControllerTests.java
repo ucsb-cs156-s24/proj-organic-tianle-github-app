@@ -1338,7 +1338,7 @@ public class CoursesControllerTests extends ControllerTestCase {
         when(schoolRepository.findByName(eq("UCSB"))).thenReturn(Optional.of(school));
         when(gitHubApp.org(anyString())).thenReturn(s);
         when(studentRepository.findByCourseIdAndStudentId(eq(course1.getId()), eq("user")))
-                .thenReturn(student);
+                .thenReturn(Optional.of(student));
         when(studentRepository.save(any())).thenReturn(student);
         when(accessToken.getToken()).thenReturn("fake-token");
 
