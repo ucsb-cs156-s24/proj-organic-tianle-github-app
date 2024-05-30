@@ -14,4 +14,5 @@ public interface StudentRepository extends CrudRepository<Student, Integer> {
     Iterable<Student> findByGithubId(Integer githubId);
     Optional<Student> findById(Long id);
     Optional<Student> findByCourseIdAndStudentId(Long courseId, String studentId);
+    Optional<Student> findByCourseIdAndEmail(Long courseId, String email);
 }

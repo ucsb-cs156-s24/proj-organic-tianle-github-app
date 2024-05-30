@@ -395,17 +395,19 @@ public class CoursesController extends ApiController {
             throw new AccessDeniedException("User does not have a school email");
         }
 
-        String netId = schoolEmail.split("@")[0];
+        // String netId = schoolEmail.split("@")[0];
 
-        Student stu = studentRepository.findByCourseIdAndStudentId(courseId, netId)
+        Student stu = studentRepository.findByCourseIdAndEmail(courseId, schoolEmail)
                 .orElse(null);
 
-        if (stu != null) {
-            throw new AccessDeniedException("User is already in the course");
+        if (stu == null) {
+            throw new AccessDeniedException("User is not in the roster");
         }
 
+        if(stu.getGithubId() != null && stu.getGithubId() != 0) {
+            throw new AccessDeniedException("User is already in the org");
+        }
         // Check roster here
-
         // Send org Invitation
         try {
             GitHubAppOrg org = gitHubApp.org(targetCourse.getGithubOrg());
@@ -417,14 +419,10 @@ public class CoursesController extends ApiController {
         }
 
         // Store in db
-        Student student = Student.builder()
-                .courseId(courseId)
-                .studentId(netId)
-                .email(schoolEmail)
-                .githubId(u.getGithubId())
-                .build();
+        stu.setGithubId(u.getGithubId());
+        stu.setUser(u);
 
-        studentRepository.save(student);
+        studentRepository.save(stu);
         return GeneralOperationResp.builder().success(true).message("Joined Successfully").build();
     }
 
