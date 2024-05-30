@@ -1290,6 +1290,45 @@ public class CoursesControllerTests extends ControllerTestCase {
 
     @WithMockUser(roles = { "USER" })
     @Test
+    public void user_not_on_roster_can_not_join() throws Exception {
+        User currentUser = currentUserService.getCurrentUser().getUser();
+        School school = School.builder().name("UCSB").abbrev("ucsb").build();
+        ArrayList<String> emails = new ArrayList<>(List.of("user@ucsb.edu"));
+        Student student = Student.builder().courseId(course1.getId()).studentId("user").email("user@ucsb.edu")
+                .githubId(currentUser.getGithubId()).build();
+
+        Student student1 = Student.builder().courseId(course1.getId()).studentId("user").email("user@ucsb.edu")
+                .githubId(null).build();
+
+        GitHubApp stub = mock(GitHubApp.class);
+        GitHubAppOrg s = mock(GitHubAppOrg.class);
+
+        when(courseRepository.findById(eq(course1.getId()))).thenReturn(Optional.of(course1));
+        when(schoolRepository.findByName(eq("UCSB"))).thenReturn(Optional.of(school));
+        when(gitHubApp.org(anyString())).thenReturn(s);
+        when(studentRepository.findByCourseIdAndEmail(eq(course1.getId()), eq("user@ucsb.edu")))
+                .thenReturn(Optional.empty());
+        when(studentRepository.save(any())).thenReturn(student);
+        when(accessToken.getToken()).thenReturn("fake-token");
+
+        when(gitHubApp.org(anyString())).thenReturn(s);
+        doReturn(emails).when(gitHubUserApi).userEmails();
+
+        MvcResult response = mockMvc.perform(post("/api/courses/join?courseId=1")
+                .with(csrf()))
+                .andExpect(status().isForbidden()).andReturn();
+
+        verify(courseRepository, times(1)).findById(eq(1L));
+        Map<String, String> responseMap = mapper.readValue(response.getResponse().getContentAsString(),
+                new TypeReference<Map<String, String>>() {
+                });
+        Map<String, String> expectedMap = Map.of("message", "User is not in the roster", "type",
+                "AccessDeniedException");
+        assertEquals(expectedMap, responseMap);
+    }
+
+    @WithMockUser(roles = { "USER" })
+    @Test
     public void user_can_not_join_course_wo_school_email() throws Exception {
         User currentUser = currentUserService.getCurrentUser().getUser();
         School school = School.builder().name("UCSB").abbrev("ucsb").build();
