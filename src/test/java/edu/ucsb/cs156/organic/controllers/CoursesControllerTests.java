@@ -1317,7 +1317,7 @@ public class CoursesControllerTests extends ControllerTestCase {
         Map<String, String> responseMap = mapper.readValue(response.getResponse().getContentAsString(),
                 new TypeReference<Map<String, String>>() {
                 });
-        Map<String, String> expectedMap = Map.of("message", "User is already in the course", "type",
+        Map<String, String> expectedMap = Map.of("message", "User is already in the org", "type",
                 "AccessDeniedException");
         assertEquals(expectedMap, responseMap);
     }
@@ -1337,7 +1337,7 @@ public class CoursesControllerTests extends ControllerTestCase {
         when(courseRepository.findById(eq(course1.getId()))).thenReturn(Optional.of(course1));
         when(schoolRepository.findByName(eq("UCSB"))).thenReturn(Optional.of(school));
         when(gitHubApp.org(anyString())).thenReturn(s);
-        when(studentRepository.findByCourseIdAndStudentId(eq(course1.getId()), eq("user")))
+        when(studentRepository.findByCourseIdAndEmail(eq(course1.getId()), eq("user@ucsb.edu")))
                 .thenReturn(Optional.of(student));
         when(studentRepository.save(any())).thenReturn(student);
         when(accessToken.getToken()).thenReturn("fake-token");
