@@ -78,15 +78,15 @@ public class SecurityConfig {
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
     http
-            .exceptionHandling(handling -> handling.authenticationEntryPoint(new Http403ForbiddenEntryPoint()))
-            .oauth2Login(
-                    oauth2 -> oauth2.userInfoEndpoint(userInfo -> userInfo.userAuthoritiesMapper(this.userAuthoritiesMapper())))
-            .csrf(csrf -> csrf
-                    .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                    .csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler()))
-            .addFilterAfter(new CsrfCookieFilter(), BasicAuthenticationFilter.class)
-            .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
-            .logout(logout -> logout.logoutRequestMatcher(new AntPathRequestMatcher("/logout")).logoutSuccessUrl("/"));
+        .exceptionHandling(handling -> handling.authenticationEntryPoint(new Http403ForbiddenEntryPoint()))
+        .oauth2Login(
+            oauth2 -> oauth2.userInfoEndpoint(userInfo -> userInfo.userAuthoritiesMapper(this.userAuthoritiesMapper())))
+        .csrf(csrf -> csrf
+            .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+            .csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler()))
+        .addFilterAfter(new CsrfCookieFilter(), BasicAuthenticationFilter.class)
+        .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+        .logout(logout -> logout.logoutRequestMatcher(new AntPathRequestMatcher("/logout")).logoutSuccessUrl("/"));
     return http.build();
   }
 
@@ -101,6 +101,7 @@ public class SecurityConfig {
 
       authorities.forEach(authority -> {
         log.trace("********** authority={}", authority);
+        mappedAuthorities.add(new SimpleGrantedAuthority("ROLE_USER"));
         mappedAuthorities.add(authority);
         if (OAuth2UserAuthority.class.isInstance(authority)) {
           OAuth2UserAuthority oauth2UserAuthority = (OAuth2UserAuthority) authority;
@@ -140,7 +141,7 @@ final class SpaCsrfTokenRequestHandler extends CsrfTokenRequestAttributeHandler 
 
   @Override
   public void handle(HttpServletRequest request, HttpServletResponse response,
-                     Supplier<CsrfToken> deferredCsrfToken) {
+      Supplier<CsrfToken> deferredCsrfToken) {
     /*
      * Always use XorCsrfTokenRequestAttributeHandler to provide BREACH protection
      * of
@@ -177,7 +178,7 @@ final class CsrfCookieFilter extends OncePerRequestFilter {
 
   @Override
   protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
-          throws ServletException, IOException {
+      throws ServletException, IOException {
     CsrfToken csrfToken = (CsrfToken) request.getAttribute("_csrf");
     // Render the token value to a cookie by causing the deferred token to be loaded
     csrfToken.getToken();

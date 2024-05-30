@@ -48,7 +48,6 @@ import org.kohsuke.github.GitHub;
 
 import java.time.LocalDateTime;
 
-import jakarta.transaction.Transactional;
 import javax.validation.Valid;
 
 import java.util.ArrayList;
