@@ -71,12 +71,7 @@ public abstract class ApiController {
     public static ObjectMapper mapperThatIgnoresMockitoMocks() {
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JavaTimeModule());
-        mapper.setAnnotationIntrospector(new JacksonAnnotationIntrospector() {
-            @Override
-            public boolean hasIgnoreMarker(final AnnotatedMember m) {
-                return super.hasIgnoreMarker(m) || m.getName().contains("Mockito");
-            }
-        });
+        mapper.setAnnotationIntrospector(new JacksonAnnotationIntrospector());
         return mapper;
     }
 
