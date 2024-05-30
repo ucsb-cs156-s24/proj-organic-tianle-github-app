@@ -1244,6 +1244,8 @@ public class CoursesControllerTests extends ControllerTestCase {
 
         verify(courseRepository, times(1)).findById(eq(1L));
         verify(studentRepository, times(1)).save(any(Student.class));
+        assertEquals(currentUser.getGithubId(), student1.getGithubId());
+        assertEquals(currentUser.getGithubId(), student1.getUser().getGithubId());
         String expectedJson = mapper.writeValueAsString(
                 GeneralOperationResp.builder().success(true).message("Joined Successfully").build());
         String responseString = response.getResponse().getContentAsString();
