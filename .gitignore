@@ -60,6 +60,7 @@ build/
 *.key
 *.pem
 *.der
+.deploy.json
 
 ### Log Files ###
 *.log
