@@ -1,7 +1,4 @@
 import BasicLayout from "main/layouts/BasicLayout/BasicLayout";
-//import { useParams } from "react-router-dom";
-//import StaffTable from 'main/components/Staff/StaffTable';
-//import { useBackend } from "main/utils/useBackend";
 
 
 export default function CoursesStaffPage() {
