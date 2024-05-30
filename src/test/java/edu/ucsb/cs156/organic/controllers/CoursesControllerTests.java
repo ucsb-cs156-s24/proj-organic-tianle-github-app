@@ -1221,14 +1221,17 @@ public class CoursesControllerTests extends ControllerTestCase {
         Student student = Student.builder().courseId(course1.getId()).studentId("user").email("user@ucsb.edu")
                 .githubId(currentUser.getGithubId()).build();
 
+        Student student1 = Student.builder().courseId(course1.getId()).studentId("user").email("user@ucsb.edu")
+                .githubId(0).build();
+
         GitHubApp stub = mock(GitHubApp.class);
         GitHubAppOrg s = mock(GitHubAppOrg.class);
 
         when(courseRepository.findById(eq(course1.getId()))).thenReturn(Optional.of(course1));
         when(schoolRepository.findByName(eq("UCSB"))).thenReturn(Optional.of(school));
         when(gitHubApp.org(anyString())).thenReturn(s);
-        when(studentRepository.findByCourseIdAndStudentId(eq(course1.getId()), eq("user")))
-                .thenReturn(Optional.empty());
+        when(studentRepository.findByCourseIdAndEmail(eq(course1.getId()), eq("user@ucsb.edu")))
+                .thenReturn(Optional.of(student1));
         when(studentRepository.save(any())).thenReturn(student);
         when(accessToken.getToken()).thenReturn("fake-token");
 
