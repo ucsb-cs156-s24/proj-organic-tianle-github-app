@@ -1,4 +1,4 @@
-import { fireEvent, render, waitFor, screen } from "@testing-library/react";
+import { render, waitFor, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "react-query";
 import { MemoryRouter, Routes, Route } from "react-router-dom";
 import CoursesStaffPage from "main/pages/CoursesStaffPage";
