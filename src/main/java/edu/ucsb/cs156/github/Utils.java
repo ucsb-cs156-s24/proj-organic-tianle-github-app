@@ -57,10 +57,6 @@ public class Utils {
         // Builds the JWT and serializes it to a compact, URL-safe string
         return builder.compact();
     }
-    // public static void main(String[] args) throws Exception {
-    // String jwtToken = createJWT("44435", 600000); // sdk-github-api-app-test
-    // GitHub gitHubApp = new GitHubBuilder().withJwtToken(jwtToken).build();
-    // }
 
     static public HttpResponse<String> post(String url, String body, String accessToken, HttpClient client)
             throws GitHubAppException {

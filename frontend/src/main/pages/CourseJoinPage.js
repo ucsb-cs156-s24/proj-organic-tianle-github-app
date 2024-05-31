@@ -66,7 +66,6 @@ export default function CoursesCreatePage({ storybook = false }) {
                         <Button variant="primary" onClick={onSubmit} style={{ marginRight: 20 }}>Join</Button>
                     </>)
                 }
-                {/* <Button variant="secondary" onClick={() => { setRedirectTo("/courses") }}>Cancel</Button> */}
             </div>
         </BasicLayout>
     )

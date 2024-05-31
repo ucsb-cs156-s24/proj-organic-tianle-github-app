@@ -338,12 +338,6 @@ public class CoursesController extends ApiController {
         Course course = courseRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(Course.class, id));
 
-        // if (!u.isAdmin()) {
-        // courseStaffRepository.findByCourseIdAndGithubId(id, u.getGithubId())
-        // .orElseThrow(() -> new AccessDeniedException(
-        // String.format("User %s is not authorized to get course %d",
-        // u.getGithubLogin(), id)));
-        // }
         return course;
     }
 
@@ -375,9 +369,6 @@ public class CoursesController extends ApiController {
 
         String emailSufix = s.getAbbrev() + ".edu";
 
-        // GitHubUserApi ghUser = new GitHubUserApi(accessToken);
-        // log.warn("\u001B[33m"+ghUser.userEmails().toString()+"\u001B[0m");
-
         ArrayList<String> emails = gitHubUserApi.userEmails();
 
         boolean found = false;
@@ -393,8 +384,6 @@ public class CoursesController extends ApiController {
         if (!found) {
             throw new AccessDeniedException("User does not have a school email");
         }
-
-        // String netId = schoolEmail.split("@")[0];
 
         Student stu = studentRepository.findByCourseIdAndEmail(courseId, schoolEmail)
                 .orElse(null);

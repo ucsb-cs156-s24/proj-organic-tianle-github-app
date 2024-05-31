@@ -9,6 +9,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import edu.ucsb.cs156.github.*;
+import edu.ucsb.cs156.organic.repositories.*;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
 import java.net.http.HttpResponse;
@@ -23,22 +28,22 @@ import jakarta.servlet.http.HttpServletResponse;
 @RestController
 @Slf4j
 public class GithubWebhookController {
-    // @Autowired
-    // CourseRepository courseRepository;
-    // @Autowired
-    // StaffRepository courseStaffRepository;
-    // @Autowired
-    // SchoolRepository schoolRepository;
-    // @Autowired
-    // UserRepository userRepository;
-    // @Autowired
-    // StudentRepository studentRepository;
-    // @Autowired
-    // GitHubApp gitHubApp;
-    // @Autowired
-    // GitHubToken accessToken;
-    // @Autowired
-    // GitHubUserApi gitHubUserApi;
+    @Autowired
+    CourseRepository courseRepository;
+    @Autowired
+    StaffRepository courseStaffRepository;
+    @Autowired
+    SchoolRepository schoolRepository;
+    @Autowired
+    UserRepository userRepository;
+    @Autowired
+    StudentRepository studentRepository;
+    @Autowired
+    GitHubApp gitHubApp;
+    @Autowired
+    GitHubToken accessToken;
+    @Autowired
+    GitHubUserApi gitHubUserApi;
     @Value("${edu.ucsb.cs156.github.webhookSecret}")
     String webhookSecret;
 
