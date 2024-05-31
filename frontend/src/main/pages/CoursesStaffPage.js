@@ -28,11 +28,12 @@ export default function CoursesStaffPage() {
   const { data: staff, error: _error, status: _status } =
     useBackend(
       // Stryker disable next-line all : don't test internal caching of React Query
-      [`/api/courses/getStaff?courseId=${courseId}`],
-      {  // Stryker disable next-line all : GET is the default
+      [`/api/courses/getStaff`],
+      // Stryker disable next-line all : GET is the default
+      {  
         method: "GET", 
         url: `/api/courses/getStaff`,
-        params:{courseId}
+        params:{courseId: courseId}
         
         
       },[]
@@ -47,7 +48,7 @@ export default function CoursesStaffPage() {
         <div className="pt-2">
         {(hasRole(currentUser, "ROLE_ADMIN") || hasRole(currentUser, "ROLE_INSTRUCTOR")) && createButton()}
           <h1>Staff</h1>
-          <StaffTable staff={staff} />
+          <StaffTable staff={staff} currentUser={currentUser}/>
     
         </div>
       </BasicLayout>

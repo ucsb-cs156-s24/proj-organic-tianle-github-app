@@ -2,7 +2,7 @@ import { render, waitFor, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "react-query";
 import { MemoryRouter, Routes, Route } from "react-router-dom";
 import CoursesStaffPage from "main/pages/CoursesStaffPage";
-import { oneCourseStaffFixtures } from "fixtures/oneCourseStaffFixtures";
+import { staffFixture } from "fixtures/staffFixture";
 
 import { apiCurrentUserFixtures } from "fixtures/currentUserFixtures";
 import { systemInfoFixtures } from "fixtures/systemInfoFixtures";
@@ -16,7 +16,6 @@ jest.mock('react-toastify', () => {
     return {
         __esModule: true,
         ...originalModule,
-        useParams: () => ({ courseId: '1' }),
         toast: (x) => mockToast(x)
     };
 });
@@ -52,7 +51,7 @@ describe("CourseStaffPage tests", () => {
         // arrange
         setupAdminUser();
         const queryClient = new QueryClient();
-        axiosMock.onGet("/api/courses/getStaff").reply(200, []);
+        axiosMock.onGet("/api/courses/getStaff", { params: { courseId: 1 } }).reply(200, []);
 
         // act
         render(
@@ -109,10 +108,8 @@ describe("CourseStaffPage tests", () => {
         // act
         render(
             <QueryClientProvider client={queryClient}>
-                <MemoryRouter initialEntries={['/courses/1/staff']}>
-                    <Routes>
-                        <Route path="/courses/:courseId/staff" element={<CoursesStaffPage />} />
-                    </Routes>
+                <MemoryRouter>
+                    <CoursesStaffPage />
                 </MemoryRouter>
             </QueryClientProvider>
         );
@@ -128,16 +125,14 @@ describe("CourseStaffPage tests", () => {
         // arrange
         setupAdminUser();
         const queryClient = new QueryClient();
-        axiosMock.onGet("/api/courses/getStaff", { params: { courseId: 1 } }).timeout();
+        axiosMock.onGet("/api/courses/getStaff").timeout();
         const restoreConsole = mockConsole();
 
         // act
         render(
             <QueryClientProvider client={queryClient}>
-                <MemoryRouter initialEntries={['/courses/1/staff']}>
-                    <Routes>
-                        <Route path="/courses/1/staff" element={<CoursesStaffPage />} />
-                    </Routes>
+                <MemoryRouter>
+                    <CoursesStaffPage />
                 </MemoryRouter>
             </QueryClientProvider>
         );
@@ -154,16 +149,14 @@ describe("CourseStaffPage tests", () => {
         // arrange
         setupInstructorUser();
         const queryClient = new QueryClient();
-        axiosMock.onGet("/api/courses/getStaff", { params: { courseId: 1 } }).timeout();
+        axiosMock.onGet("/api/courses/getStaff").timeout();
         const restoreConsole = mockConsole();
 
         // act
         render(
             <QueryClientProvider client={queryClient}>
-                <MemoryRouter initialEntries={['/courses/1/staff']}>
-                    <Routes>
-                        <Route path="/courses/:courseId/staff" element={<CoursesStaffPage />} />
-                    </Routes>
+                <MemoryRouter>
+                    <CoursesStaffPage />
                 </MemoryRouter>
             </QueryClientProvider>
         );
@@ -180,15 +173,13 @@ describe("CourseStaffPage tests", () => {
         // arrange
         setupAdminUser();
         const queryClient = new QueryClient();
-        axiosMock.onGet("/api/courses/getStaff").reply(200, oneCourseStaffFixtures.courseThreeStaff);
+        axiosMock.onGet("/api/courses/getStaff").reply(200, staffFixture.threeStaff);
 
         // act
         render(
             <QueryClientProvider client={queryClient}>
-                <MemoryRouter initialEntries={['/courses/1/staff']}>
-                    <Routes>
-                        <Route path="/courses/:courseId/staff" element={<CoursesStaffPage />} />
-                    </Routes>
+                <MemoryRouter>
+                    <CoursesStaffPage />
                 </MemoryRouter>
             </QueryClientProvider>
         );
@@ -204,15 +195,13 @@ describe("CourseStaffPage tests", () => {
         // arrange
         setupInstructorUser();
         const queryClient = new QueryClient();
-        axiosMock.onGet("/api/courses/getStaff").reply(200, oneCourseStaffFixtures.courseThreeStaff);
+        axiosMock.onGet("/api/courses/getStaff").reply(200, staffFixture.threeStaff);
 
         // act
         render(
             <QueryClientProvider client={queryClient}>
-                <MemoryRouter initialEntries={['/courses/1/staff']}>
-                    <Routes>
-                        <Route path="/courses/:courseId/staff" element={<CoursesStaffPage />} />
-                    </Routes>
+                <MemoryRouter>
+                    <CoursesStaffPage />
                 </MemoryRouter>
             </QueryClientProvider>
         );
