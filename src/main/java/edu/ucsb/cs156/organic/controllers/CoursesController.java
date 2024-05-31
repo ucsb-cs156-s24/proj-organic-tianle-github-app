@@ -234,4 +234,5 @@ public class CoursesController extends ApiController {
         courseRepository.delete(course);
         return course;
     }
+
 }
