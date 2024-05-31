@@ -67,7 +67,7 @@ describe("CourseStaffPage tests", () => {
             expect(screen.getByText(/Add Staff/)).toBeInTheDocument();
         });
         const button = screen.getByText(/Add Staff/);
-        expect(button).toHaveAttribute("href", "/courses/undefined/staff/addStaff");
+        expect(button).toHaveAttribute("href", "/courses/1/staff/addStaff");
         expect(button).toHaveAttribute("style", "float: right;");
     });
 
@@ -75,7 +75,7 @@ describe("CourseStaffPage tests", () => {
         // arrange
         setupInstructorUser();
         const queryClient = new QueryClient();
-        axiosMock.onGet("/api/courses/getStaff?courseId=1").reply(200, []);
+        axiosMock.onGet("/api/courses/getStaff").reply(200, []);
 
         // act
         render(
@@ -91,7 +91,7 @@ describe("CourseStaffPage tests", () => {
             expect(screen.getByText(/Add Staff/)).toBeInTheDocument();
         });
         const button = screen.getByText(/Add Staff/);
-        expect(button).toHaveAttribute("href", "/courses/undefined/staff/addStaff");
+        expect(button).toHaveAttribute("href", "/courses/1/staff/addStaff");
         expect(button).toHaveAttribute("style", "float: right;");
     });
     
@@ -99,7 +99,7 @@ describe("CourseStaffPage tests", () => {
         // arrange
         setupUser(); 
         const queryClient = new QueryClient();
-        axiosMock.onGet("/api/courses/getStaff?courseId=1").reply(200, []);
+        axiosMock.onGet("/api/courses/getStaff").reply(200, []);
     
         // act
         render(
@@ -121,7 +121,7 @@ describe("CourseStaffPage tests", () => {
         // arrange
         setupAdminUser();
         const queryClient = new QueryClient();
-        axiosMock.onGet("/api/courses/getStaff?courseId=1").timeout();
+        axiosMock.onGet("/api/courses/getStaff").timeout();
         const restoreConsole = mockConsole();
 
         // act
@@ -145,7 +145,7 @@ describe("CourseStaffPage tests", () => {
         // arrange
         setupInstructorUser();
         const queryClient = new QueryClient();
-        axiosMock.onGet("/api/courses/getStaff?courseId=1").timeout();
+        axiosMock.onGet("/api/courses/getStaff").timeout();
         const restoreConsole = mockConsole();
 
         // act

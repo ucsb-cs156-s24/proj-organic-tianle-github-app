@@ -29,7 +29,8 @@ export default function CoursesStaffPage() {
       [`/api/courses/getStaff?courseId=${courseId}`],
       {  // Stryker disable next-line all : GET is the default
         method: "GET", 
-        url: `/api/courses/getStaff?courseId=${courseId}`
+        url: `/api/courses/getStaff`,
+        params:{courseId}
         
         
       },[]
