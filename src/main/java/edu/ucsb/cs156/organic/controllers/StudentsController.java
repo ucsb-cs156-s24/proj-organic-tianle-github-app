@@ -63,9 +63,6 @@ public class StudentsController extends ApiController {
     @Autowired
     UserRepository userRepository;
 
-    @Autowired
-    StaffRepository courseStaffRepository;
-
     @Operation(summary = "Get Students for course")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     @GetMapping("/all")
@@ -81,27 +78,24 @@ public class StudentsController extends ApiController {
     }
 
     @Operation(summary = "Create a new student for a course")
-    @PreAuthorize("hasAnyRole('ROLE_ADMIN','ROLE_INSTRUCTOR')")
+    @PreAuthorize("hasAnyRole('ROLE_ADMIN','ROLE_INSTRUCTOR', 'ROLE_USER')")
+    // @PreAuthorize("hasRole('ROLE_ADMIN')")
     @PostMapping("/post")
     public Student postStudent(
             @Parameter(name = "courseId", description = "course ID") @RequestParam Long courseId,
             @Parameter(name = "email", description = "Email of the student") @RequestParam String email,
             @Parameter(name = "fname", description = "First name") @RequestParam String fname,
-            @Parameter(name = "githubId", description = "Github ID") @RequestParam Integer githubId,
             @Parameter(name = "lname", description = "Last name") @RequestParam String lname,
-            @Parameter(name = "studentId", description = "Student ID") @RequestParam String studentId)
-            throws JsonProcessingException {
-
+            @Parameter(name = "studentId", description = "Student ID") @RequestParam String studentId) {
         Course course = courseRepository.findById(courseId)
                 .orElseThrow(() -> new EntityNotFoundException(Course.class, courseId.toString()));
         User u = getCurrentUser().getUser();
         if (!u.isAdmin()) {
-            courseStaffRepository.findByCourseIdAndGithubId(course.getId(), u.getGithubId())
+            staffRepository.findByCourseIdAndGithubId(course.getId(), u.getGithubId())
                     .orElseThrow(() -> new AccessDeniedException(
                             "User is not a staff member for this course"));
         }
         Student student = Student.builder().courseId(course.getId()).email(email).fname(fname)
-                .githubId(githubId)
                 .lname(lname).studentId(studentId).build();
         studentRepository.save(student);
         return student;
