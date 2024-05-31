@@ -79,7 +79,6 @@ public class StudentsController extends ApiController {
 
     @Operation(summary = "Create a new student for a course")
     @PreAuthorize("hasAnyRole('ROLE_ADMIN','ROLE_INSTRUCTOR', 'ROLE_USER')")
-    // @PreAuthorize("hasRole('ROLE_ADMIN')")
     @PostMapping("/post")
     public Student postStudent(
             @Parameter(name = "courseId", description = "course ID") @RequestParam Long courseId,
