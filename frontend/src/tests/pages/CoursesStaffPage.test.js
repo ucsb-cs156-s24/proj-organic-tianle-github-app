@@ -2,7 +2,7 @@ import { render, waitFor, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "react-query";
 import { MemoryRouter, Routes, Route } from "react-router-dom";
 import CoursesStaffPage from "main/pages/CoursesStaffPage";
-
+import { oneCourseStaffFixtures } from "fixtures/oneCourseStaffFixtures";
 
 import { apiCurrentUserFixtures } from "fixtures/currentUserFixtures";
 import { systemInfoFixtures } from "fixtures/systemInfoFixtures";
@@ -136,7 +136,7 @@ describe("CourseStaffPage tests", () => {
             <QueryClientProvider client={queryClient}>
                 <MemoryRouter initialEntries={['/courses/1/staff']}>
                     <Routes>
-                        <Route path="/courses/:courseId/staff" element={<CoursesStaffPage />} />
+                        <Route path="/courses/1/staff" element={<CoursesStaffPage />} />
                     </Routes>
                 </MemoryRouter>
             </QueryClientProvider>
@@ -175,6 +175,59 @@ describe("CourseStaffPage tests", () => {
 
         expect(screen.queryByTestId(`${testId}-cell-row-0-col-id`)).not.toBeInTheDocument();
     });
+
+    test("renders three courses correctly for admin", async () => {    
+        // arrange
+        setupAdminUser();
+        const queryClient = new QueryClient();
+        axiosMock.onGet("/api/courses/getStaff").reply(200, oneCourseStaffFixtures.courseThreeStaff);
+
+        // act
+        render(
+            <QueryClientProvider client={queryClient}>
+                <MemoryRouter initialEntries={['/courses/1/staff']}>
+                    <Routes>
+                        <Route path="/courses/:courseId/staff" element={<CoursesStaffPage />} />
+                    </Routes>
+                </MemoryRouter>
+            </QueryClientProvider>
+        );
+
+        // assert
+        await waitFor(() => { expect(screen.getByTestId(`${testId}-cell-row-0-col-id`)).toHaveTextContent("1"); });
+        expect(screen.getByTestId(`${testId}-cell-row-1-col-id`)).toHaveTextContent("2");
+        expect(screen.getByTestId(`${testId}-cell-row-2-col-id`)).toHaveTextContent("3");
+
+    });
+
+    test("renders three courses correctly for instructor", async () => {      
+        // arrange
+        setupInstructorUser();
+        const queryClient = new QueryClient();
+        axiosMock.onGet("/api/courses/getStaff").reply(200, oneCourseStaffFixtures.courseThreeStaff);
+
+        // act
+        render(
+            <QueryClientProvider client={queryClient}>
+                <MemoryRouter initialEntries={['/courses/1/staff']}>
+                    <Routes>
+                        <Route path="/courses/:courseId/staff" element={<CoursesStaffPage />} />
+                    </Routes>
+                </MemoryRouter>
+            </QueryClientProvider>
+        );
+
+        // assert
+        await waitFor(() => { expect(screen.getByTestId(`${testId}-cell-row-0-col-id`)).toHaveTextContent("1"); });
+        expect(screen.getByTestId(`${testId}-cell-row-1-col-id`)).toHaveTextContent("2");
+        expect(screen.getByTestId(`${testId}-cell-row-2-col-id`)).toHaveTextContent("3");
+
+    });
+
+    
+
+   
+
 
     
 
