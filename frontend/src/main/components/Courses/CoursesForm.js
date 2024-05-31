@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form'
 import { useNavigate } from 'react-router-dom'
 import { enableEndDateValidation } from './dateValidation'; // Import the JavaScript file
 import React, { useEffect } from 'react';
+import { useBackend } from "main/utils/useBackend";
 
 function CoursesForm({ initialContents, submitAction, buttonLabel = "Create" }) {
     useEffect(() => {
@@ -18,12 +19,22 @@ function CoursesForm({ initialContents, submitAction, buttonLabel = "Create" }) 
     );
 
     const navigate = useNavigate();
-    
+
+    const { data: schools, _error, _status } =
+        useBackend(
+            // Stryker disable next-line all : don't test internal caching of React Query
+            [`/api/schools/all`],
+            {  // Stryker disable next-line all : GET is the default, so changing this to "" doesn't introduce a bug
+                method: "GET",
+                url: `/api/schools/all`
+            }
+        );
+
     // Stryker restore all
-    
+
     // Stryker disable next-line Regex
     const isodate_regex = /(\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d\.\d+)|(\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d)|(\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d)/i;
-    
+
     return (
 
         <Form onSubmit={handleSubmit(submitAction)}>
@@ -70,11 +81,14 @@ function CoursesForm({ initialContents, submitAction, buttonLabel = "Create" }) 
                         <Form.Label htmlFor="school">School</Form.Label>
                         <Form.Control
                             data-testid="CoursesForm-school"
+                            as="select"
                             id="school"
                             type="text"
                             isInvalid={Boolean(errors.school)}
                             {...register("school", { required: true })}
-                        />
+                        >
+                            {schools && schools.map(s => <option value={s.abbrev} key={s.abbrev}>{s.name}</option>)}
+                        </Form.Control>
                         <Form.Control.Feedback type="invalid">
                             {errors.school && 'School is required. '}
                         </Form.Control.Feedback>
@@ -121,7 +135,7 @@ function CoursesForm({ initialContents, submitAction, buttonLabel = "Create" }) 
                             id="endDate"
                             type="datetime-local"
                             isInvalid={Boolean(errors.endDate)}
-                            {...register("endDate", {required: true, pattern: isodate_regex })}
+                            {...register("endDate", { required: true, pattern: isodate_regex })}
                         />
                         <Form.Control.Feedback type="invalid">
                             {errors.endDate && 'EndDate date is required. '}

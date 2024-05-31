@@ -78,6 +78,7 @@ describe("CoursesEditPage tests", () => {
             axiosMock.resetHistory();
             axiosMock.onGet("/api/currentUser").reply(200, apiCurrentUserFixtures.userOnly);
             axiosMock.onGet("/api/systemInfo").reply(200, systemInfoFixtures.showingNeither);
+            axiosMock.onGet("/api/schools/all").reply(200, [{ abbrev: "UCSB", name: "UCSB" }]);
             axiosMock.onGet("/api/courses/get", { params: { id: 17 } }).reply(200, {
                 id: 17,
                 name: "CS 156",
@@ -188,7 +189,7 @@ describe("CoursesEditPage tests", () => {
 
         });
 
-       
+
     });
 });
 
