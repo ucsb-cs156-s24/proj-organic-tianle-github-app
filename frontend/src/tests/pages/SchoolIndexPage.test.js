@@ -1,14 +1,5 @@
 
 import { fireEvent, render, waitFor, screen } from "@testing-library/react";
-
-import { QueryClient, QueryClientProvider } from "react-query";
-
-import { MemoryRouter } from "react-router-dom";
-
-import SchoolIndexPage from "main/pages/SchoolIndexPage";
-
-
-import { fireEvent, render, waitFor, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "react-query";
 import { MemoryRouter } from "react-router-dom";
 import SchoolIndexPage from "main/pages/SchoolIndexPage";
@@ -65,7 +56,7 @@ describe("SchoolIndexPage tests", () => {
             expect(screen.getByText(/Create School/)).toBeInTheDocument();
         });
         const button = screen.getByText(/Create School/);
-        expect(button).toHaveAttribute("href", "/admin/schools/create"); 
+        expect(button).toHaveAttribute("href", "/schools/create"); 
         expect(button).toHaveAttribute("style", "float: right;");
        
         // assert
