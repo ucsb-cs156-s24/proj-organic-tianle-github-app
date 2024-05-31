@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "react-query";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, Routes, Route } from "react-router-dom";
 import CoursesAddStaffPage from "main/pages/CoursesAddStaffPage";
 
 import { apiCurrentUserFixtures } from "fixtures/currentUserFixtures";
@@ -15,6 +15,7 @@ jest.mock('react-toastify', () => {
     return {
         __esModule: true,
         ...originalModule,
+        useParams: () => ({ courseId: '1' }),
         toast: (x) => mockToast(x)
     };
 });
@@ -41,12 +42,15 @@ describe("CourseAddStaffPage tests", () => {
         axiosMock.onGet("/api/systemInfo").reply(200, systemInfoFixtures.showingNeither);
     });
 
-    const queryClient = new QueryClient();
+    
     test("renders without crashing", () => {
+        const queryClient = new QueryClient();
         render(
             <QueryClientProvider client={queryClient}>
-                <MemoryRouter>
-                    <CoursesAddStaffPage />
+                <MemoryRouter initialEntries={['/courses/1/addStaff']}>
+                    <Routes>
+                        <Route path="/courses/:courseId/addStaff" element={<CoursesAddStaffPage />} />
+                    </Routes>
                 </MemoryRouter>
             </QueryClientProvider>
         );
@@ -56,16 +60,19 @@ describe("CourseAddStaffPage tests", () => {
 
         const queryClient = new QueryClient();
         const staff = {
+            id: 1,
             courseId: "1",
-            githubId: "pconrad"
+            githubLogin: "pconrad"
         };
 
-        axiosMock.onPost("/api/staff/addStaff").reply(202, staff);
+        axiosMock.onPost("/api/courses/addStaff").reply(202, staff);
 
         render(
             <QueryClientProvider client={queryClient}>
-                <MemoryRouter>
-                    <CoursesAddStaffPage />
+                <MemoryRouter initialEntries={['/courses/1/addStaff']}>
+                    <Routes>
+                        <Route path="/courses/:courseId/addStaff" element={<CoursesAddStaffPage />} />
+                    </Routes>
                 </MemoryRouter>
             </QueryClientProvider>
         );
@@ -94,6 +101,7 @@ describe("CourseAddStaffPage tests", () => {
                 "githubLogin": "pconrad"
         });
 
+        await waitFor(() => expect(mockToast).toBeCalled());
         expect(mockToast).toBeCalledWith("New staff added - courseId: 1");
         expect(mockNavigate).toBeCalledWith({ "to": "/courses/1/staff" });
     });

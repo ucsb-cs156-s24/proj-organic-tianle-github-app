@@ -1,6 +1,6 @@
 import { fireEvent, render, waitFor, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "react-query";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, Routes, Route } from "react-router-dom";
 import CoursesStaffPage from "main/pages/CoursesStaffPage";
 
 
@@ -16,6 +16,7 @@ jest.mock('react-toastify', () => {
     return {
         __esModule: true,
         ...originalModule,
+        useParams: () => ({ courseId: '1' }),
         toast: (x) => mockToast(x)
     };
 });
@@ -56,8 +57,10 @@ describe("CourseStaffPage tests", () => {
         // act
         render(
             <QueryClientProvider client={queryClient}>
-                <MemoryRouter>
-                    <CoursesStaffPage />
+                <MemoryRouter initialEntries={['/courses/1/staff']}>
+                    <Routes>
+                        <Route path="/courses/:courseId/staff" element={<CoursesStaffPage />} />
+                    </Routes>
                 </MemoryRouter>
             </QueryClientProvider>
         );
@@ -80,8 +83,10 @@ describe("CourseStaffPage tests", () => {
         // act
         render(
             <QueryClientProvider client={queryClient}>
-                <MemoryRouter>
-                    <CoursesStaffPage />
+                <MemoryRouter initialEntries={['/courses/1/staff']}>
+                    <Routes>
+                        <Route path="/courses/:courseId/staff" element={<CoursesStaffPage />} />
+                    </Routes>
                 </MemoryRouter>
             </QueryClientProvider>
         );
@@ -104,8 +109,10 @@ describe("CourseStaffPage tests", () => {
         // act
         render(
             <QueryClientProvider client={queryClient}>
-                <MemoryRouter>
-                    <CoursesStaffPage />
+                <MemoryRouter initialEntries={['/courses/1/staff']}>
+                    <Routes>
+                        <Route path="/courses/:courseId/staff" element={<CoursesStaffPage />} />
+                    </Routes>
                 </MemoryRouter>
             </QueryClientProvider>
         );
@@ -127,8 +134,10 @@ describe("CourseStaffPage tests", () => {
         // act
         render(
             <QueryClientProvider client={queryClient}>
-                <MemoryRouter>
-                    <CoursesStaffPage />
+                <MemoryRouter initialEntries={['/courses/1/staff']}>
+                    <Routes>
+                        <Route path="/courses/:courseId/staff" element={<CoursesStaffPage />} />
+                    </Routes>
                 </MemoryRouter>
             </QueryClientProvider>
         );
@@ -151,8 +160,10 @@ describe("CourseStaffPage tests", () => {
         // act
         render(
             <QueryClientProvider client={queryClient}>
-                <MemoryRouter>
-                    <CoursesStaffPage />
+                <MemoryRouter initialEntries={['/courses/1/staff']}>
+                    <Routes>
+                        <Route path="/courses/:courseId/staff" element={<CoursesStaffPage />} />
+                    </Routes>
                 </MemoryRouter>
             </QueryClientProvider>
         );
