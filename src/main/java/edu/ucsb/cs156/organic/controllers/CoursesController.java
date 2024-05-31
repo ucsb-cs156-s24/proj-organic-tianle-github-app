@@ -12,7 +12,6 @@ import edu.ucsb.cs156.organic.repositories.UserRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-// import liquibase.pro.packaged.gh;
 import lombok.extern.slf4j.Slf4j;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -53,6 +52,28 @@ import javax.validation.Valid;
 import java.util.ArrayList;
 import java.util.Optional;
 
+/**
+ * CoursesController
+ *
+ * This class is a REST controller for the Course entity. It provides endpoints
+ * for creating, reading, updating, and deleting courses. It also provides an
+ * endpoint for listing all courses.
+ *
+ * The class is annotated with {@code @RestController @code} to indicate that it is a
+ * controller class that handles REST requests. It is also annotated with
+ * {@code @RequestMapping("/api/courses") @code} to indicate that it handles requests to the
+ * <code>/api/courses</code> path.
+ * 
+ * The class has an autowired field of type GithubToken called accessToken. This
+ * field can be used to get a handle to the Github API via a call
+ * like this one:
+ * 
+ * <pre>
+ * GitHubUserApi ghUser = new GitHubUserApi(accessToken);
+ * String emails = ghUser.userEmails().toString()
+ * </pre>
+ */
+
 @Tag(name = "Courses")
 @RequestMapping("/api/courses")
 @RestController
@@ -89,11 +110,6 @@ public class CoursesController extends ApiController {
     public Iterable<Course> allCourses() {
         User u = getCurrentUser().getUser();
         log.info("u={}", u);
-        // This is how you use it
-        // log.warn("\u001B[33mTOKENTOTOKEN " + accessToken.getToken() + "\u001B[0m");
-        // log.warn("\u001B[33mGetting User Emails\u001B[0m");
-        // GitHubUserApi ghUser = new GitHubUserApi(accessToken);
-        // log.warn("\u001B[33m"+ghUser.userEmails().toString()+"\u001B[0m");
         if (u.isAdmin()) {
             return courseRepository.findAll();
         } else {
