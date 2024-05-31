@@ -30,13 +30,8 @@ export default function CoursesStaffPage() {
       // Stryker disable next-line all : don't test internal caching of React Query
       [`/api/courses/getStaff`],
       // Stryker disable next-line all : GET is the default
-      {  
-        method: "GET", 
-        url: `/api/courses/getStaff`,
-        params:{courseId: courseId}
-        
-        
-      },[]
+      { method: "GET", url: `/api/courses/getStaff`,params:{courseId: courseId}},
+      []
     
       
     );
