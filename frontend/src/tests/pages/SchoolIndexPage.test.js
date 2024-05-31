@@ -1,3 +1,13 @@
+
+import { fireEvent, render, waitFor, screen } from "@testing-library/react";
+
+import { QueryClient, QueryClientProvider } from "react-query";
+
+import { MemoryRouter } from "react-router-dom";
+
+import SchoolIndexPage from "main/pages/SchoolIndexPage";
+
+
 import { fireEvent, render, waitFor, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "react-query";
 import { MemoryRouter } from "react-router-dom";
