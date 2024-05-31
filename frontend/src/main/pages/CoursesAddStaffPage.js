@@ -11,7 +11,7 @@ export default function AddCourseStaffPage({storybook=false}) {
         url: "/api/courses/addStaff",
         method: "POST",
         params: {
-            courseId: staff.courseId,
+            courseId: courseId,
             githubLogin: staff.githubId
         }
     });
@@ -40,7 +40,8 @@ export default function AddCourseStaffPage({storybook=false}) {
     return (
         <BasicLayout>
         <div className="pt-2">
-            <h1>Add New Staff Member</h1>
+            <h1>Add New Staff Member </h1>
+            <p>Add Staff Member to Course {courseId} </p>
 
             <AddCourseStaffForm submitAction={onSubmit} />
 

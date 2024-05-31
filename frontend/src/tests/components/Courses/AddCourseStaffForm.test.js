@@ -1,6 +1,6 @@
 import { render, waitFor, fireEvent, screen } from "@testing-library/react";
 import AddCourseStaffForm from "main/components/Courses/AddCourseStaffForm";
-import { addCourseStaffFixtures } from "fixtures/addCourseStaffFixtures";
+import { staffFixture } from "fixtures/staffFixture";
 import { BrowserRouter as Router } from "react-router-dom";
 
 const mockedNavigate = jest.fn();
@@ -20,7 +20,6 @@ describe("AddCourseStaffForm tests", () => {
                 <AddCourseStaffForm />
             </Router>
         );
-        await screen.findByText(/courseId/);
         await screen.findByText(/Create/);
     });
 
@@ -29,13 +28,11 @@ describe("AddCourseStaffForm tests", () => {
 
         render(
             <Router  >
-                <AddCourseStaffForm initialContents={addCourseStaffFixtures.oneCourseStaff} />
+                <AddCourseStaffForm initialContents={staffFixture.oneStaff} />
             </Router>
         );
         await screen.findByTestId(/AddCourseStaffForm-id/);
         expect(screen.getByTestId(/AddCourseStaffForm-id/)).toHaveValue("1");
-        expect(screen.getByTestId(/AddCourseStaffForm-courseId/)).toHaveValue("12");
-        expect(screen.getByTestId(/AddCourseStaffForm-githubId/)).toHaveValue("318493");
     });
 
 
@@ -51,8 +48,7 @@ describe("AddCourseStaffForm tests", () => {
 
         fireEvent.click(submitButton);
 
-        await screen.findByText(/courseId is required/);
-        expect(screen.getByText(/courseId is required/)).toBeInTheDocument();
+        await screen.findByText(/githubId is required/);
         expect(screen.getByText(/githubId is required/)).toBeInTheDocument();
     });
 
@@ -66,14 +62,13 @@ describe("AddCourseStaffForm tests", () => {
                 <AddCourseStaffForm submitAction={mockSubmitAction} />
             </Router>
         );
-        await screen.findByTestId("AddCourseStaffForm-courseId");
+        await screen.findByTestId("AddCourseStaffForm-githubId");
 
-        const courseId = screen.getByTestId("AddCourseStaffForm-courseId");
         const githubId = screen.getByTestId("AddCourseStaffForm-githubId");
         const submitButton = screen.getByTestId("AddCourseStaffForm-submit");
 
-        fireEvent.change(courseId, { target: { value: "156" } });
-        fireEvent.change(githubId, { target: { value: '1234' } });
+        
+        fireEvent.change(githubId, { target: { value: 'scottpchow23' } });
         fireEvent.click(submitButton);
 
         await waitFor(() => expect(mockSubmitAction).toHaveBeenCalled());

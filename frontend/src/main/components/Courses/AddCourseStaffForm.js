@@ -42,21 +42,6 @@ function AddCourseStaffForm({ initialContents, submitAction, buttonLabel = "Crea
             <Row>
                 <Col>
                     <Form.Group className="mb-3" >
-                        <Form.Label htmlFor="courseId">courseId</Form.Label>
-                        <Form.Control
-                            data-testid="AddCourseStaffForm-courseId"
-                            id="courseId"
-                            type="text"
-                            isInvalid={Boolean(errors.courseId)}
-                            {...register("courseId", { required: true })}
-                        />
-                        <Form.Control.Feedback type="invalid">
-                            {errors.courseId && 'courseId is required.'}
-                        </Form.Control.Feedback>
-                    </Form.Group>
-                </Col>
-                <Col>
-                    <Form.Group className="mb-3" >
                         <Form.Label htmlFor="githubId">Github Id</Form.Label>
                         <Form.Control
                             data-testid="AddCourseStaffForm-githubId"
