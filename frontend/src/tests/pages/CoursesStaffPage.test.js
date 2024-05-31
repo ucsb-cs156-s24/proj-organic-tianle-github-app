@@ -128,7 +128,7 @@ describe("CourseStaffPage tests", () => {
         // arrange
         setupAdminUser();
         const queryClient = new QueryClient();
-        axiosMock.onGet("/api/courses/getStaff").timeout();
+        axiosMock.onGet("/api/courses/getStaff", { params: { courseId: 1 } }).timeout();
         const restoreConsole = mockConsole();
 
         // act
@@ -154,7 +154,7 @@ describe("CourseStaffPage tests", () => {
         // arrange
         setupInstructorUser();
         const queryClient = new QueryClient();
-        axiosMock.onGet("/api/courses/getStaff").timeout();
+        axiosMock.onGet("/api/courses/getStaff", { params: { courseId: 1 } }).timeout();
         const restoreConsole = mockConsole();
 
         // act
