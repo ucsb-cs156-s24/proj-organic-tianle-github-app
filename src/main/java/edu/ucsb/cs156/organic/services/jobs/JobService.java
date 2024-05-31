@@ -20,10 +20,11 @@ public class JobService {
   @Autowired
   private JobService self;
 
-  public Job runAsJob(JobContextConsumer jobFunction) {
+  public Job runAsJob(JobContextConsumer jobFunction, long id) {
     Job job = Job.builder()
       .createdBy(currentUserService.getUser())
       .status("running")
+      .id(id)
       .build();
 
     jobsRepository.save(job);

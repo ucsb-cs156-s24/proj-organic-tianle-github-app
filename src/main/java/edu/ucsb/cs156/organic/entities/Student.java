@@ -2,7 +2,7 @@ package edu.ucsb.cs156.organic.entities;
 
 import lombok.*;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 
 @Data

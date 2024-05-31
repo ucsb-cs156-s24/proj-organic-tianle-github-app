@@ -1,4 +1,3 @@
-
 import { fireEvent, render, waitFor, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "react-query";
 import { MemoryRouter } from "react-router-dom";
@@ -56,16 +55,14 @@ describe("SchoolIndexPage tests", () => {
             expect(screen.getByText(/Create School/)).toBeInTheDocument();
         });
         const button = screen.getByText(/Create School/);
-        expect(button).toHaveAttribute("href", "/schools/create"); 
+        expect(button).toHaveAttribute("href", "/admin/schools/create"); 
         expect(button).toHaveAttribute("style", "float: right;");
-       
+
         // assert
         await waitFor( ()=>{
             expect(screen.getByText(/Delete/)).toBeInTheDocument();
         });
         expect(screen.queryByTestId("Delete")).not.toBeInTheDocument();
-
-
     });
 
     test("renders three schools correctly for admin", async () => {    
@@ -141,8 +138,7 @@ describe("SchoolIndexPage tests", () => {
         // act
         fireEvent.click(deleteButton);
 
- 
-
+    
     });
 
 
