@@ -55,7 +55,7 @@ describe("SchoolIndexPage tests", () => {
             expect(screen.getByText(/Create School/)).toBeInTheDocument();
         });
         const button = screen.getByText(/Create School/);
-        expect(button).toHaveAttribute("href", "/schools/create"); //fixme could have bug because plural
+        expect(button).toHaveAttribute("href", "/admin/schools/create"); 
         expect(button).toHaveAttribute("style", "float: right;");
        
         // assert
