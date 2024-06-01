@@ -237,6 +237,41 @@ describe("CoursesEditPage tests", () => {
             expect(screen.queryByTestId("CourseEdit-githubAppTips")).not.toBeInTheDocument();
         });
 
+        test("Error Github App tips! (exceptionThrown)", async () => {
+            axiosMock.onGet("/api/courses/github", { params: { id: 17 } }).reply(200, {
+                githubAppInstalled: false,
+                exceptionThrown: true,
+                exceptionMessage: "OOOOOOPS THIS IS AN ERROR"
+            });
+            render(
+                <QueryClientProvider client={queryClient}>
+                    <MemoryRouter>
+                        <CoursesEditPage />
+                    </MemoryRouter>
+                </QueryClientProvider>
+            );
+            await screen.findByTestId("CoursesForm-name");
+            expect(screen.getByTestId("CourseEdit-githubAppTips")).toBeInTheDocument();
+            expect(screen.getByText("OOOOOOPS THIS IS AN ERROR")).toBeInTheDocument();
+            expect(screen.getByText("Please contact your administrator to check the configuration of the app.")).toBeInTheDocument();
+            expect(screen.getByText("Warning: An error occurred while trying to check the GitHub App status")).toBeInTheDocument();
+        });
 
+        test("Error Github App tips! (no name)", async () => {
+            axiosMock.onGet("/api/courses/github", { params: { id: 17 } }).reply(200, {
+                githubAppInstalled: false,
+            });
+            render(
+                <QueryClientProvider client={queryClient}>
+                    <MemoryRouter>
+                        <CoursesEditPage />
+                    </MemoryRouter>
+                </QueryClientProvider>
+            );
+            await screen.findByTestId("CoursesForm-name");
+            expect(screen.getByTestId("CourseEdit-githubAppTips")).toBeInTheDocument();
+            expect(screen.getByTestId("CourseEdit-GHAT-Card-Error")).toBeInTheDocument();
+            expect(screen.getByText("Please contact your administrator to check the configuration of the app.")).toBeInTheDocument();
+        });
     });
 });

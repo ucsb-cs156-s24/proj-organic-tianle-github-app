@@ -27,7 +27,6 @@ export default function GitHubAppTips({ githubStatus, org }) {
             <Card style={{ marginBottom: 20, marginTop: 20 }} data-testid="CourseEdit-GHAT-Card-Error">
                 <Card.Body>
                     <Card.Title>Warning: This app does not seem to be configured properly.</Card.Title>
-                    <p>{JSON.stringify(githubStatus)}</p>
                     <ul>
                         <li>
                             The value of <code>githubStatus.name</code> is "<code>{githubStatus.name}</code>"
