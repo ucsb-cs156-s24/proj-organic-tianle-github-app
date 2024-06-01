@@ -77,7 +77,7 @@ export default function CoursesEditPage({ storybook = false }) {
         <h1>Edit Course</h1>
         {
           githubStatus && githubStatus.githubAppInstalled === false &&
-          <GHATips app={githubStatus.name} org={course.githubOrg}></GHATips>
+          <GHATips githubStatus={githubStatus} org={course.githubOrg}></GHATips>
         }
         {
           course && <CoursesForm initialContents={course} submitAction={onSubmit} buttonLabel="Update" />
