@@ -1,4 +1,4 @@
-package edu.ucsb.cs156.organic.interceptors; // lowercase i
+package edu.ucsb.cs156.organic.interceptors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;

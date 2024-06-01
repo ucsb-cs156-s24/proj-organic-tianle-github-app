@@ -31,7 +31,7 @@ jest.mock('react-router-dom', () => {
 
 describe("CourseCreatePage tests", () => {
 
-    const axiosMock =new AxiosMockAdapter(axios);
+    const axiosMock = new AxiosMockAdapter(axios);
 
     beforeEach(() => {
         jest.clearAllMocks();
@@ -39,6 +39,7 @@ describe("CourseCreatePage tests", () => {
         axiosMock.resetHistory();
         axiosMock.onGet("/api/currentUser").reply(200, apiCurrentUserFixtures.userOnly);
         axiosMock.onGet("/api/systemInfo").reply(200, systemInfoFixtures.showingNeither);
+        axiosMock.onGet("/api/schools/all").reply(200, [{ abbrev: "UCSB", name: "UCSB" }]);
     });
 
     const queryClient = new QueryClient();
@@ -108,7 +109,7 @@ describe("CourseCreatePage tests", () => {
                 "startDate": "2023-09-24T12:00",
                 "endDate": "2023-12-15T12:00",
                 "githubOrg": "ucsb-cs156-f23"
-        });
+            });
 
         expect(mockToast).toBeCalledWith("New course created - id: 1");
         expect(mockNavigate).toBeCalledWith({ "to": "/courses" });

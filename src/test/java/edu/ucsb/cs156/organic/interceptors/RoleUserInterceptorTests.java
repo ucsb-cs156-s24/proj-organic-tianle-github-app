@@ -1,7 +1,5 @@
 
-package edu.ucsb.cs156.organic.interceptors; // lowercase i
-
-
+package edu.ucsb.cs156.organic.interceptors;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
