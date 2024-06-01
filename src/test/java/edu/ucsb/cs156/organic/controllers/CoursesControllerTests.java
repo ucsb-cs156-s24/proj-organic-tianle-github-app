@@ -1175,7 +1175,8 @@ public class CoursesControllerTests extends ControllerTestCase {
         verify(courseRepository, times(1)).findById(eq(1L));
         verify(gitHubApp, times(1)).org(eq("ucsb-cs156-f23"));
 
-        OrgStatus o = OrgStatus.builder().org("ucsb-cs156-f23").githubAppInstalled(false).name("123").build();
+        OrgStatus o = OrgStatus.builder().org("ucsb-cs156-f23").githubAppInstalled(false).name("123")
+        .exceptionThrown(true).exceptionMessage("edu.ucsb.cs156.github.GitHubAppException: ucsb-cs156-f23").build();
 
         String expectedJson = mapper.writeValueAsString(o);
         String responseString = response.getResponse().getContentAsString();
