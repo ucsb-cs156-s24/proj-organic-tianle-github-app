@@ -192,6 +192,7 @@ describe("CoursesEditPage tests", () => {
 
         test("Yes Github App tips!", async () => {
             axiosMock.onGet("/api/courses/github", { params: { id: 17 } }).reply(200, {
+                exceptionThrown: false,
                 githubAppInstalled: false,
                 name: "Test"
             });
