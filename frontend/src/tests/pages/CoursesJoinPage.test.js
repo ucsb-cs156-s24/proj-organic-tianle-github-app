@@ -48,7 +48,6 @@ describe("CourseJoinPage tests", () => {
             axiosMock.onGet("/api/systemInfo").reply(200, systemInfoFixtures.showingNeither);
         });
         test("Load data with backend info", async () => {
-            // const restoreConsole = mockConsole();
             render(
                 <QueryClientProvider client={queryClient}>
                     <MemoryRouter>
@@ -57,7 +56,6 @@ describe("CourseJoinPage tests", () => {
                 </QueryClientProvider>
             );
             await screen.findByText("Loading")
-            // restoreConsole();
         });
     })
 
@@ -75,7 +73,6 @@ describe("CourseJoinPage tests", () => {
 
         const queryClient = new QueryClient();
         test("Load data with backend info", async () => {
-            // const restoreConsole = mockConsole();
             render(
                 <QueryClientProvider client={queryClient}>
                     <MemoryRouter>
@@ -92,12 +89,10 @@ describe("CourseJoinPage tests", () => {
             expect(screen.getByText(/F23/)).toBeInTheDocument();
             expect(screen.getByTestId("CourseJoin-school")).toBeInTheDocument();
             expect(screen.getByTestId("CourseJoin-school")).toHaveTextContent("Course school: UCSB");
-            // restoreConsole();
         });
 
         test("Do the job when click join", async () => {
             axiosMock.onPost("/api/courses/join").reply(202, {});
-            // const restoreConsole = mockConsole();
             render(
                 <QueryClientProvider client={queryClient}>
                     <MemoryRouter>
