@@ -15,4 +15,10 @@ public class OrgStatus {
   private String org;
   private boolean githubAppInstalled;
   private String name;
+
+  @Builder.Default
+private boolean exceptionThrown  = false;
+
+  @Builder.Default
+  private String exceptionMessage = "";
 }

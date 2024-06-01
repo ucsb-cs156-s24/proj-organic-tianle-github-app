@@ -22,7 +22,12 @@ public class GitHubApp {
     public GitHubAppOrg org(String org) throws GitHubAppException {
         HttpResponse<String> resp = get("/orgs/" + org + "/installation");
         if (resp.statusCode() != 200) {
-            throw new GitHubAppException("Organization not found");
+            String responseBody = resp.body();
+            String message = String.format("""
+                    Error getting installation for org %s: %s
+                    Status Code: %d
+                    """, org, responseBody, resp.statusCode());        
+            throw new GitHubAppException(message);
         }
         JSONObject json = new JSONObject(resp.body());
         return new GitHubAppOrg(this, org, json.getInt("id") + "");
