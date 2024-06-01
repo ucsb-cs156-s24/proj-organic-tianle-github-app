@@ -1,12 +1,10 @@
 import { Card } from 'react-bootstrap';
 
 export default function GitHubAppTips({ githubStatus, org }) {
-    console.log("org=", org, "githubStatus=", githubStatus);
-
-    if (githubStatus?.exceptionThrown)
+    if (githubStatus.exceptionThrown)
         return (
             <div data-testid="CourseEdit-githubAppTips">
-                <Card style={{ marginBottom: 20, marginTop: 20 }} data-testid="CourseEdit-GHAT-Card-Error">
+                <Card style={{ marginBottom: 20, marginTop: 20 }} data-testid="CourseEdit-GHAT-Card-Error1">
                     <Card.Body>
                         <Card.Title>Warning: An error occurred while trying to check the GitHub App status</Card.Title>
                         <ul>
@@ -24,7 +22,7 @@ export default function GitHubAppTips({ githubStatus, org }) {
 
     if (githubStatus && !(githubStatus.name))
         return (<div data-testid="CourseEdit-githubAppTips">
-            <Card style={{ marginBottom: 20, marginTop: 20 }} data-testid="CourseEdit-GHAT-Card-Error">
+            <Card style={{ marginBottom: 22, marginTop: 22 }} data-testid="CourseEdit-GHAT-Card-Error2">
                 <Card.Body>
                     <Card.Title>Warning: This app does not seem to be configured properly.</Card.Title>
                     <ul>

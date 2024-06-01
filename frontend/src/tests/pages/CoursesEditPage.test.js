@@ -255,6 +255,10 @@ describe("CoursesEditPage tests", () => {
             expect(screen.getByText("OOOOOOPS THIS IS AN ERROR")).toBeInTheDocument();
             expect(screen.getByText("Please contact your administrator to check the configuration of the app.")).toBeInTheDocument();
             expect(screen.getByText("Warning: An error occurred while trying to check the GitHub App status")).toBeInTheDocument();
+            const githubAppTipsCard = screen.getByTestId("CourseEdit-GHAT-Card-Error1");
+            expect(githubAppTipsCard).toBeInTheDocument();
+            expect(githubAppTipsCard).toHaveStyle("margin-bottom: 20px");
+            expect(githubAppTipsCard).toHaveStyle("margin-top: 20px");
         });
 
         test("Error Github App tips! (no name)", async () => {
@@ -270,8 +274,12 @@ describe("CoursesEditPage tests", () => {
             );
             await screen.findByTestId("CoursesForm-name");
             expect(screen.getByTestId("CourseEdit-githubAppTips")).toBeInTheDocument();
-            expect(screen.getByTestId("CourseEdit-GHAT-Card-Error")).toBeInTheDocument();
+            expect(screen.getByTestId("CourseEdit-GHAT-Card-Error2")).toBeInTheDocument();
             expect(screen.getByText("Please contact your administrator to check the configuration of the app.")).toBeInTheDocument();
+            const githubAppTipsCard = screen.getByTestId("CourseEdit-GHAT-Card-Error2");
+            expect(githubAppTipsCard).toBeInTheDocument();
+            expect(githubAppTipsCard).toHaveStyle("margin-bottom: 22px");
+            expect(githubAppTipsCard).toHaveStyle("margin-top: 22px");
         });
     });
 });
