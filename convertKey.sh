@@ -1,1 +1,1 @@
-openssl pkcs8 -topk8 -inform PEM -outform DER -in $1 -out $1.der -nocrypt
+openssl pkcs8 -topk8 -inform PEM -outform DER -in $1 -out .github.pk.der -nocrypt

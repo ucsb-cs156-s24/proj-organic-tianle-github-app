@@ -18,9 +18,8 @@ Instructions for setting up Github OAuth can be found here:
 3. In addition to this, please go to the private key part, and generate a private key for this app.
     1. Download the key from github
     2. Save it under the the root directory of this project as `<name>.pem`
-    3. Run `./convertKey.sh <name>.pem` to get a key in the java format, will will be saved as `<name>.pem.der`.
-    4. Rename it to `.github.pk.der`
-    5. Remove the `<name>.pem` file
+    3. Run `./convertKey.sh <name>.pem` to get a key in the java format, will will be saved as `.github.pk.der`.
+    4. Remove the `<name>.pem` file (or store it in a safe place, but do NOT commit it to the repo).
    
 4. Your GithubApp must have correct permissions setup to access.
    1. Go to the `Permissions & events` tab in your GithubApp settings.
@@ -50,7 +49,7 @@ Please note that things gets a little bit different in the production environmen
 
 **If you run into errors, or it's just simply not working, please try to change the permission of your `.github.pk.der` file to be readable to the dokku user**
 
-The application will return 500 if the private key is misconfigured when accessing the `/api/courses/github` endpoint.
+The application show error on course edit page if the private key is misconfigured.
 
 If the application failed to start due to connection refused, please try to increase the wait time for dokke via `dokku config:set <yourapp> DOKKU_DEFAULT_CHECKS_WAIT=20`.
 
