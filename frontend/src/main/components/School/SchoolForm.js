@@ -28,7 +28,7 @@ function SchoolForm({ initialContents, submitAction, buttonLabel = "Create" }) {
                         <Form.Label htmlFor="abbrev">Abbreviation</Form.Label>
                         <OverlayTrigger
                             placement="top"
-                            overlay={<Tooltip>Please enter an abbreviation for school name in lowercase. EX: UCSB</Tooltip>}
+                            overlay={<Tooltip>Please enter an abbreviation for school name in lowercase. EX: ucsb</Tooltip>}
                             delay='5'
                         >
                         <Form.Control

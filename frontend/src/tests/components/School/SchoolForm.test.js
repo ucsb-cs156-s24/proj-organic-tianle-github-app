@@ -33,7 +33,7 @@ describe("SchoolForm tests", () => {
         expect(screen.getByTestId(/SchoolForm-abbrev/)).toHaveValue("ucsb");
         expect(screen.getByTestId(/SchoolForm-name/)).toHaveValue("UC Santa Barbara");
         expect(screen.getByTestId(/SchoolForm-termRegex/)).toHaveValue("[WSMF]\\d\\d");
-        expect(screen.getByTestId(/SchoolForm-termDescription/)).toHaveValue("Enter quarter, e.g. F23, W24, S24, M24");
+        expect(screen.getByTestId(/SchoolForm-termDescription/)).toHaveValue("quarter");
     });
 
     test("Correct Error messsages on bad input", async () => {
@@ -87,7 +87,7 @@ describe("SchoolForm tests", () => {
         fireEvent.change(abbrevField, { target: { value: 'ucsb' } });
         fireEvent.change(nameField, { target: { value: 'UC Santa Barbara' } });
         fireEvent.change(termRegexField, { target: { value: '[WSMF]\\d\\d' } });
-        fireEvent.change(termDescriptionField, { target: { value: 'Enter quarter, e.g. F23, W24, S24, M24' } });
+        fireEvent.change(termDescriptionField, { target: { value: 'quarter' } });
         fireEvent.click(submitButton);
 
         await screen.findByTestId(/SchoolForm-abbrev/);
