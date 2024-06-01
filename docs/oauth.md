@@ -24,8 +24,17 @@ Instructions for setting up Github OAuth can be found here:
    
 4. Your GithubApp must have correct permissions setup to access.
    1. Go to the `Permissions & events` tab in your GithubApp settings.
+    
+      ![image](https://github.com/ucsb-cs156-s24/proj-organic-s24-5pm-3/assets/43783877/cb8a55c1-daea-45a6-81c4-cb7552597e1d)
+      
    2. Under `Organization permissions`, make sure `Rea and Write` is checked for `Administration` and `Members`.
+
+      ![image](https://github.com/ucsb-cs156-s24/proj-organic-s24-5pm-3/assets/43783877/b0b25a0d-9eab-4f87-be29-cb0d0d968fd4)
+
    3. Under `Account permissions`, make sure `Read` is checked for `User email address`.
+
+      ![image](https://github.com/ucsb-cs156-s24/proj-organic-s24-5pm-3/assets/43783877/94ba8e7d-0bd0-40ec-b0c1-4db45b037877)
+
 
 Please note that things gets a little bit different in the production environment.
 
