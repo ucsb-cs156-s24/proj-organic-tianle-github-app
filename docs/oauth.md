@@ -21,6 +21,11 @@ Instructions for setting up Github OAuth can be found here:
     3. Run `./convertKey.sh <name>.pem` to get a key in the java format, will will be saved as `<name>.pem.der`.
     4. Rename it to `.github.pk.der`
     5. Remove the `<name>.pem` file
+   
+4. Your GithubApp must have correct permissions setup to access.
+   1. Go to the `Permissions & events` tab in your GithubApp settings.
+   2. Under `Organization permissions`, make sure `Rea and Write` is checked for `Administration` and `Members`.
+   3. Under `Account permissions`, make sure `Read` is checked for `User email address`.
 
 Please note that things gets a little bit different in the production environment.
 
