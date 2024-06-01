@@ -66,6 +66,4 @@ export default function GitHubAppTips({ githubStatus, org }) {
         </Card>
     </div>
     );
-
-    return null;
 }
