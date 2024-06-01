@@ -1085,6 +1085,10 @@ public class CoursesControllerTests extends ControllerTestCase {
                 // assert
                 verify(courseRepository, times(1)).findById(eq(1L));
 
+                course2.setGithubAppInstallationId(0);
+
+                verify(courseRepository, times(1)).save(eq(course2));
+
                 OrgStatus o = OrgStatus.builder().org("ucsb-cs156-f23").githubAppInstalled(false).name("")
                                 .exceptionThrown(true)
                                 .exceptionMessage("edu.ucsb.cs156.github.GitHubAppException: ucsb-cs156-f23").build();
@@ -1184,6 +1188,9 @@ public class CoursesControllerTests extends ControllerTestCase {
                 // assert
                 verify(courseRepository, times(1)).findById(eq(1L));
                 verify(gitHubApp, times(1)).org(eq("ucsb-cs156-f23"));
+
+                course1.setGithubAppInstallationId(0);
+                verify(courseRepository, times(1)).save(eq(course1));
 
                 OrgStatus o = OrgStatus.builder().org("ucsb-cs156-f23").githubAppInstalled(false).name("")
                                 .exceptionThrown(true)
