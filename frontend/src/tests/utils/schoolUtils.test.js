@@ -1,4 +1,4 @@
-import { onDeleteSuccess, cellToAxiosParamsDelete } from "main/components/Utils/SchoolUtils";
+import { onDeleteSuccess, cellToAxiosParamsDelete } from "main/utils/schoolsUtils";
 import mockConsole from "jest-mock-console";
 
 const mockToast = jest.fn();
@@ -9,7 +9,7 @@ jest.mock('react-toastify', () => {
         ...originalModule,
         toast: (x) => mockToast(x)
     };
- });
+});
 
 describe("SchoolUtils", () => {
 
@@ -38,7 +38,7 @@ describe("SchoolUtils", () => {
             // arrange
             const cell = { row: { values: { abbrev: "ucsb" } } };
 
-            // act s
+            // act
             const result = cellToAxiosParamsDelete(cell);
 
             // assert
@@ -48,5 +48,11 @@ describe("SchoolUtils", () => {
                 params: { abbrev: "ucsb" }
             });
         });
+
     });
 });
+
+
+
+
+

@@ -7,7 +7,7 @@ import { toast } from "react-toastify";
 
  export function cellToAxiosParamsDelete(cell) {
      return {
-         url: "/api/schools/delete",
+         url: "/api/schools",
          method: "DELETE",
          params: {
              abbrev: cell.row.values.abbrev  //fixme was id, is now abbrev?

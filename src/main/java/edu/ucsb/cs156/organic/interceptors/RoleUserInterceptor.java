@@ -1,4 +1,4 @@
-package edu.ucsb.cs156.organic.interceptors; // lowercase i
+package edu.ucsb.cs156.organic.interceptors;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
