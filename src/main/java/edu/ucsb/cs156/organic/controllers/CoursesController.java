@@ -165,6 +165,8 @@ public class CoursesController extends ApiController {
             appInfo = gitHubApp.appInfo();
         } catch (Exception e) {
             log.error("EXCEPTION: ", e);
+            course.setGithubAppInstallationId(0);
+            courseRepository.save(course);
             return OrgStatus.builder()
                     .org(githubOrg)
                     .githubAppInstalled(false)
@@ -178,21 +180,21 @@ public class CoursesController extends ApiController {
         log.info("appInfo={}", appInfo.toString());
         log.info("****************************************");
 
-        if (course.getGithubAppInstallationId() == 0) {
-            try {
-                GitHubAppOrg org = gitHubApp.org(githubOrg);
-                course.setGithubAppInstallationId(Long.parseLong(org.instId));
-                courseRepository.save(course);
-            } catch (Exception e) {
-                log.error("CAUGHT EXCEPTION \u001b[31m" + e.toString() + "\u001b[0m");
-                return OrgStatus.builder()
-                        .org(githubOrg)
-                        .githubAppInstalled(false)
-                        .name("")
-                        .exceptionThrown(true)
-                        .exceptionMessage(e.toString())
-                        .build();
-            }
+        try {
+            GitHubAppOrg org = gitHubApp.org(githubOrg);
+            course.setGithubAppInstallationId(Long.parseLong(org.instId));
+            courseRepository.save(course);
+        } catch (Exception e) {
+            log.error("CAUGHT EXCEPTION \u001b[31m" + e.toString() + "\u001b[0m");
+            course.setGithubAppInstallationId(0);
+            courseRepository.save(course);
+            return OrgStatus.builder()
+                    .org(githubOrg)
+                    .githubAppInstalled(false)
+                    .name("")
+                    .exceptionThrown(true)
+                    .exceptionMessage(e.toString())
+                    .build();
         }
         return OrgStatus.builder()
                 .org(githubOrg)
