@@ -59,9 +59,11 @@ import java.util.Optional;
  * for creating, reading, updating, and deleting courses. It also provides an
  * endpoint for listing all courses.
  *
- * The class is annotated with {@code @RestController @code} to indicate that it is a
+ * The class is annotated with {@code @RestController @code} to indicate that it
+ * is a
  * controller class that handles REST requests. It is also annotated with
- * {@code @RequestMapping("/api/courses") @code} to indicate that it handles requests to the
+ * {@code @RequestMapping("/api/courses") @code} to indicate that it handles
+ * requests to the
  * <code>/api/courses</code> path.
  * 
  * The class has an autowired field of type GithubToken called accessToken. This
@@ -145,6 +147,7 @@ public class CoursesController extends ApiController {
 
         Course course = courseRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(Course.class, id));
+        String githubOrg = course.getGithubOrg();
 
         if (!u.isAdmin()) {
             Optional<Staff> s = courseStaffRepository.findByCourseIdAndGithubId(id, u.getGithubId());
@@ -154,8 +157,27 @@ public class CoursesController extends ApiController {
                                 u.getGithubLogin(), id));
             }
         }
-        JSONObject appInfo = gitHubApp.appInfo();
-        String githubOrg = course.getGithubOrg();
+        log.info("****************************************");
+        log.info("About to call gitHubApp.appInfo()...");
+
+        JSONObject appInfo = null;
+        try {
+            appInfo = gitHubApp.appInfo();
+        } catch (Exception e) {
+            log.error("EXCEPTION: ", e);
+            return OrgStatus.builder()
+                    .org(githubOrg)
+                    .githubAppInstalled(false)
+                    .name("")
+                    .exceptionThrown(true)
+                    .exceptionMessage(e.toString())
+                    .build();
+        }
+
+        log.info("****************************************");
+        log.info("appInfo={}", appInfo.toString());
+        log.info("****************************************");
+
         if (course.getGithubAppInstallationId() == 0) {
             try {
                 GitHubAppOrg org = gitHubApp.org(githubOrg);
@@ -410,7 +432,7 @@ public class CoursesController extends ApiController {
             throw new AccessDeniedException("User is not in the roster");
         }
 
-        if(stu.getGithubId() != null && stu.getGithubId() != 0) {
+        if (stu.getGithubId() != null && stu.getGithubId() != 0) {
             throw new AccessDeniedException("User is already in the org");
         }
         // Check roster here

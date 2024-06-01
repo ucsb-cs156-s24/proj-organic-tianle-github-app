@@ -17,7 +17,7 @@ public class OrgStatus {
   private String name;
 
   @Builder.Default
-  private boolean exceptionThrown  = false;
+private boolean exceptionThrown  = false;
 
   @Builder.Default
   private String exceptionMessage = "";
