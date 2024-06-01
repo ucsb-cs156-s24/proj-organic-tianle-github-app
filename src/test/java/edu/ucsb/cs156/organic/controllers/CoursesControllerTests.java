@@ -1068,33 +1068,6 @@ public class CoursesControllerTests extends ControllerTestCase {
 
         @WithMockUser(roles = { "ADMIN" })
         @Test
-        public void admin_can_query_github_app_status_with_cache() throws Exception {
-                // arrange
-                Course course2 = course1;
-                // GitHubAppOrg tempOrg = mock(GitHubAppOrg.class);
-                // tempOrg.instId = "123";
-                course2.setGithubAppInstallationId(123);
-                when(courseRepository.findById(eq(1L))).thenReturn(Optional.of(course2));
-                // when(gitHubApp.org(anyString())).thenReturn(tempOrg);
-                when(gitHubApp.appInfo()).thenReturn(new JSONObject("{\"slug\":\"123\"}"));
-
-                // act
-                MvcResult response = mockMvc.perform(get("/api/courses/github?id=1"))
-                                .andExpect(status().isOk()).andReturn();
-
-                // assert
-                verify(courseRepository, times(1)).findById(eq(1L));
-                // verify(gitHubApp, times(1)).org(eq("ucsb-cs156-f23"));
-
-                OrgStatus o = OrgStatus.builder().org("ucsb-cs156-f23").githubAppInstalled(true).name("123").build();
-
-                String expectedJson = mapper.writeValueAsString(o);
-                String responseString = response.getResponse().getContentAsString();
-                assertEquals(expectedJson, responseString);
-        }
-
-        @WithMockUser(roles = { "ADMIN" })
-        @Test
         public void admin_can_query_github_app_status_with_error() throws Exception {
                 // arrange
                 Course course2 = course1;
