@@ -1070,10 +1070,10 @@ public class CoursesControllerTests extends ControllerTestCase {
         @Test
         public void admin_can_query_github_app_status_with_error() throws Exception {
                 // arrange
-                Course course2 = course1;
+                Course course2 = mock(Course.class);
+                when(course2.getGithubOrg()).thenReturn(course1.getGithubOrg());
                 GitHubAppOrg tempOrg = mock(GitHubAppOrg.class);
                 tempOrg.instId = "123";
-                course2.setGithubAppInstallationId(0);
                 when(courseRepository.findById(eq(1L))).thenReturn(Optional.of(course2));
                 when(gitHubApp.org(anyString())).thenReturn(tempOrg);
                 when(gitHubApp.appInfo()).thenThrow(new GitHubAppException("ucsb-cs156-f23"));
@@ -1085,7 +1085,7 @@ public class CoursesControllerTests extends ControllerTestCase {
                 // assert
                 verify(courseRepository, times(1)).findById(eq(1L));
 
-                course2.setGithubAppInstallationId(0);
+                verify(course2, times(1)).setGithubAppInstallationId(eq(0L));
 
                 verify(courseRepository, times(1)).save(eq(course2));
 
@@ -1177,7 +1177,9 @@ public class CoursesControllerTests extends ControllerTestCase {
         @Test
         public void admin_can_query_github_app_status_not_linked() throws Exception {
                 // arrange
-                when(courseRepository.findById(eq(1L))).thenReturn(Optional.of(course1));
+                Course fakeCourse = mock(Course.class);
+                when(fakeCourse.getGithubOrg()).thenReturn(course1.getGithubOrg());
+                when(courseRepository.findById(eq(1L))).thenReturn(Optional.of(fakeCourse));
                 when(gitHubApp.org(anyString())).thenThrow(new GitHubAppException("ucsb-cs156-f23"));
                 when(gitHubApp.appInfo()).thenReturn(new JSONObject("{\"slug\":\"123\"}"));
 
@@ -1189,8 +1191,8 @@ public class CoursesControllerTests extends ControllerTestCase {
                 verify(courseRepository, times(1)).findById(eq(1L));
                 verify(gitHubApp, times(1)).org(eq("ucsb-cs156-f23"));
 
-                course1.setGithubAppInstallationId(0);
-                verify(courseRepository, times(1)).save(eq(course1));
+                verify(fakeCourse, times(1)).setGithubAppInstallationId(eq(0L));
+                verify(courseRepository, times(1)).save(eq(fakeCourse));
 
                 OrgStatus o = OrgStatus.builder().org("ucsb-cs156-f23").githubAppInstalled(false).name("")
                                 .exceptionThrown(true)
