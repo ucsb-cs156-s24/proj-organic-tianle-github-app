@@ -166,7 +166,9 @@ public class CoursesController extends ApiController {
                 return OrgStatus.builder()
                         .org(githubOrg)
                         .githubAppInstalled(false)
-                        .name(appInfo.getString("slug"))
+                        .name("")
+                        .exceptionThrown(true)
+                        .exceptionMessage(e.toString())
                         .build();
             }
         }
