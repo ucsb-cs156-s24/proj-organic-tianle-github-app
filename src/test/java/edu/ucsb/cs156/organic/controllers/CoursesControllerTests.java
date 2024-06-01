@@ -1093,6 +1093,34 @@ public class CoursesControllerTests extends ControllerTestCase {
                 assertEquals(expectedJson, responseString);
         }
 
+        @WithMockUser(roles = { "ADMIN" })
+        @Test
+        public void admin_can_query_github_app_status_with_error() throws Exception {
+                // arrange
+                Course course2 = course1;
+                GitHubAppOrg tempOrg = mock(GitHubAppOrg.class);
+                tempOrg.instId = "123";
+                course2.setGithubAppInstallationId(0);
+                when(courseRepository.findById(eq(1L))).thenReturn(Optional.of(course2));
+                when(gitHubApp.org(anyString())).thenReturn(tempOrg);
+                when(gitHubApp.appInfo()).thenThrow(new GitHubAppException("ucsb-cs156-f23"));
+
+                // act
+                MvcResult response = mockMvc.perform(get("/api/courses/github?id=1"))
+                                .andExpect(status().isOk()).andReturn();
+
+                // assert
+                verify(courseRepository, times(1)).findById(eq(1L));
+
+                OrgStatus o = OrgStatus.builder().org("ucsb-cs156-f23").githubAppInstalled(false).name("")
+                                .exceptionThrown(true)
+                                .exceptionMessage("edu.ucsb.cs156.github.GitHubAppException: ucsb-cs156-f23").build();
+
+                String expectedJson = mapper.writeValueAsString(o);
+                String responseString = response.getResponse().getContentAsString();
+                assertEquals(expectedJson, responseString);
+        }
+
         @WithMockUser(roles = { "USER" })
         @Test
         public void user_can_query_github_app_status_if_is_staff() throws Exception {
