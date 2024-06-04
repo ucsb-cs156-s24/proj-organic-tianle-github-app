@@ -10,12 +10,13 @@ export default function SchoolIndexPage() {
 
     const { data: currentUser } = useCurrentUser();
   
+
     const createButton = () => {  
       
         return (
             <Button
                 variant="primary"
-                href="/schools/create"
+                href="/admin/schools/create"
                 style={{ float: "right" }}
             >
                 Create School 
@@ -43,4 +44,3 @@ export default function SchoolIndexPage() {
         </BasicLayout>
       )
   }
-  

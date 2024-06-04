@@ -13,7 +13,7 @@ import React from "react";
      const navigate = useNavigate();
 
      const editCallback = (cell) => {
-         navigate(`/schools/edit/${cell.row.values.abbrev}`);
+         navigate(`/admin/schools/edit/${cell.row.values.abbrev}`);
      };
 
      // Stryker disable all : hard to test for query caching
