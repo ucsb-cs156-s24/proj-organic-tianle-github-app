@@ -51,7 +51,7 @@ function AddCourseStaffForm({ initialContents, submitAction, buttonLabel = "Crea
                             {...register("githubLogin", { required: true })}
                         />
                         <Form.Control.Feedback type="invalid">
-                            {errors.githubLogin && 'githubId is required. '}
+                            {errors.githubLogin && 'githubLogin is required. '}
                         </Form.Control.Feedback>
                     </Form.Group>
                 </Col>

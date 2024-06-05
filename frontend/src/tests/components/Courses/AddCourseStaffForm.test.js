@@ -62,13 +62,13 @@ describe("AddCourseStaffForm tests", () => {
                 <AddCourseStaffForm submitAction={mockSubmitAction} />
             </Router>
         );
-        await screen.findByTestId("AddCourseStaffForm-githubId");
+        await screen.findByTestId("AddCourseStaffForm-githubLogin");
 
-        const githubId = screen.getByTestId("AddCourseStaffForm-githubLogin");
+        const githubLogin = screen.getByTestId("AddCourseStaffForm-githubLogin");
         const submitButton = screen.getByTestId("AddCourseStaffForm-submit");
 
         
-        fireEvent.change(githubId, { target: { value: 'scottpchow23' } });
+        fireEvent.change(githubLogin, { target: { value: 'scottpchow23' } });
         fireEvent.click(submitButton);
 
         await waitFor(() => expect(mockSubmitAction).toHaveBeenCalled());
