@@ -30,6 +30,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
+import org.kohsuke.github.GHApp;
+import org.kohsuke.github.GHAppInstallation;
+import org.kohsuke.github.GitHub;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.AutoConfigureDataJpa;
@@ -307,50 +310,53 @@ public class CoursesControllerTests extends ControllerTestCase {
                 assertEquals(expectedJson, responseString);
         }
 
-        // @WithMockUser(roles = { "ADMIN", "USER" })
-        // @Test
-        // public void an_admin_user_can_post_a_new_course_with_gha_ok() throws
-        // Exception {
-        // // arrange
-        // GitHubAppOrg tempOrg = mock(GitHubAppOrg.class);
-        // tempOrg.instId = "123";
-        // when(gitHubApp.org(any())).thenReturn(tempOrg);
+        @WithMockUser(roles = { "ADMIN", "USER" })
+        @Test
+        public void an_admin_user_can_post_a_new_course_with_gha_ok() throws Exception {
+                // arrange
+                GitHub fake = mock(GitHub.class);
+                GHApp fakeApp = mock(GHApp.class);
+                GHAppInstallation fakeInst = mock(GHAppInstallation.class);
+                when(gitHubBuilderFactory.build(any(JwtProvider.class))).thenReturn(fake);
+                when(fake.getApp()).thenReturn(fakeApp);
+                when(fakeApp.getInstallationByOrganization(any())).thenReturn(fakeInst);
+                when(fakeInst.getId()).thenReturn(123L);
 
-        // Course courseBefore = Course.builder()
-        // .name("CS16")
-        // .school("UCSB")
-        // .term("F23")
-        // .startDate(LocalDateTime.parse("2023-09-01T00:00:00"))
-        // .endDate(LocalDateTime.parse("2023-12-31T00:00:00"))
-        // .githubOrg("ucsb-cs16-f23")
-        // .githubAppInstallationId(123)
-        // .build();
+                Course courseBefore = Course.builder()
+                                .name("CS16")
+                                .school("UCSB")
+                                .term("F23")
+                                .startDate(LocalDateTime.parse("2023-09-01T00:00:00"))
+                                .endDate(LocalDateTime.parse("2023-12-31T00:00:00"))
+                                .githubOrg("ucsb-cs16-f23")
+                                .githubAppInstallationId(123)
+                                .build();
 
-        // Course courseAfter = Course.builder()
-        // .id(222L)
-        // .name("CS16")
-        // .school("UCSB")
-        // .term("F23")
-        // .startDate(LocalDateTime.parse("2023-09-01T00:00:00"))
-        // .endDate(LocalDateTime.parse("2023-12-31T00:00:00"))
-        // .githubOrg("ucsb-cs16-f23")
-        // .githubAppInstallationId(123)
-        // .build();
+                Course courseAfter = Course.builder()
+                                .id(222L)
+                                .name("CS16")
+                                .school("UCSB")
+                                .term("F23")
+                                .startDate(LocalDateTime.parse("2023-09-01T00:00:00"))
+                                .endDate(LocalDateTime.parse("2023-12-31T00:00:00"))
+                                .githubOrg("ucsb-cs16-f23")
+                                .githubAppInstallationId(123)
+                                .build();
 
-        // when(courseRepository.save(eq(courseBefore))).thenReturn(courseAfter);
+                when(courseRepository.save(eq(courseBefore))).thenReturn(courseAfter);
 
-        // // act
-        // MvcResult response = mockMvc.perform(
-        // post("/api/courses/post?name=CS16&school=UCSB&term=F23&startDate=2023-09-01T00:00:00&endDate=2023-12-31T00:00:00&githubOrg=ucsb-cs16-f23")
-        // .with(csrf()))
-        // .andExpect(status().isOk()).andReturn();
+                // act
+                MvcResult response = mockMvc.perform(
+                                post("/api/courses/post?name=CS16&school=UCSB&term=F23&startDate=2023-09-01T00:00:00&endDate=2023-12-31T00:00:00&githubOrg=ucsb-cs16-f23")
+                                                .with(csrf()))
+                                .andExpect(status().isOk()).andReturn();
 
-        // // assert
-        // verify(courseRepository, times(1)).save(courseBefore);
-        // String expectedJson = mapper.writeValueAsString(courseAfter);
-        // String responseString = response.getResponse().getContentAsString();
-        // assertEquals(expectedJson, responseString);
-        // }
+                // assert
+                verify(courseRepository, times(1)).save(courseBefore);
+                String expectedJson = mapper.writeValueAsString(courseAfter);
+                String responseString = response.getResponse().getContentAsString();
+                assertEquals(expectedJson, responseString);
+        }
 
         @WithMockUser(roles = { "INSTRUCTOR", "USER" })
         @Test
@@ -681,41 +687,45 @@ public class CoursesControllerTests extends ControllerTestCase {
                 assertEquals(expectedJson, responseString);
         }
 
-        // @WithMockUser(roles = { "ADMIN", "USER" })
-        // @Test
-        // public void an_admin_user_can_update_a_course_with_gha_ok() throws Exception
-        // {
-        // // arrange
+        @WithMockUser(roles = { "ADMIN", "USER" })
+        @Test
+        public void an_admin_user_can_update_a_course_with_gha_ok() throws Exception {
+                // arrange
 
-        // Course courseBefore = course1;
+                Course courseBefore = course1;
 
-        // Course courseAfter = course2;
-        // courseAfter.setGithubAppInstallationId(123);
-        // courseAfter.setSchool("UCSD");
+                Course courseAfter = course2;
+                courseAfter.setGithubAppInstallationId(123);
+                courseAfter.setSchool("UCSD");
 
-        // when(courseRepository.findById(eq(courseBefore.getId()))).thenReturn(Optional.of(courseBefore));
-        // when(courseRepository.save(eq(courseAfter))).thenReturn(courseAfter);
-        // GitHubAppOrg tempOrg = mock(GitHubAppOrg.class);
-        // tempOrg.instId = "123";
-        // when(gitHubApp.org(any())).thenReturn(tempOrg);
+                when(courseRepository.findById(eq(courseBefore.getId()))).thenReturn(Optional.of(courseBefore));
+                when(courseRepository.save(eq(courseAfter))).thenReturn(courseAfter);
+                
+                GitHub fake = mock(GitHub.class);
+                GHApp fakeApp = mock(GHApp.class);
+                GHAppInstallation fakeInst = mock(GHAppInstallation.class);
+                when(gitHubBuilderFactory.build(any(JwtProvider.class))).thenReturn(fake);
+                when(fake.getApp()).thenReturn(fakeApp);
+                when(fakeApp.getInstallationByOrganization(any())).thenReturn(fakeInst);
+                when(fakeInst.getId()).thenReturn(123L);
 
-        // String urlTemplate = String.format(
-        // "/api/courses/update?id=%d&name=%s&school=%s&term=%s&startDate=%s&endDate=%s&githubOrg=%s",
-        // courseAfter.getId(), courseAfter.getName(), courseAfter.getSchool(),
-        // courseAfter.getTerm(),
-        // courseAfter.getStartDate().toString(), courseAfter.getEndDate().toString(),
-        // courseAfter.getGithubOrg());
-        // MvcResult response = mockMvc.perform(
-        // put(urlTemplate)
-        // .with(csrf()))
-        // .andExpect(status().isOk()).andReturn();
+                String urlTemplate = String.format(
+                                "/api/courses/update?id=%d&name=%s&school=%s&term=%s&startDate=%s&endDate=%s&githubOrg=%s",
+                                courseAfter.getId(), courseAfter.getName(), courseAfter.getSchool(),
+                                courseAfter.getTerm(),
+                                courseAfter.getStartDate().toString(), courseAfter.getEndDate().toString(),
+                                courseAfter.getGithubOrg());
+                MvcResult response = mockMvc.perform(
+                                put(urlTemplate)
+                                                .with(csrf()))
+                                .andExpect(status().isOk()).andReturn();
 
-        // // assert
-        // verify(courseRepository, times(1)).save(courseBefore);
-        // String expectedJson = mapper.writeValueAsString(courseAfter);
-        // String responseString = response.getResponse().getContentAsString();
-        // assertEquals(expectedJson, responseString);
-        // }
+                // assert
+                verify(courseRepository, times(1)).save(courseBefore);
+                String expectedJson = mapper.writeValueAsString(courseAfter);
+                String responseString = response.getResponse().getContentAsString();
+                assertEquals(expectedJson, responseString);
+        }
 
         // Instructor can update course if they are staff
         @WithMockUser(roles = { "INSTRUCTOR", "USER" })
