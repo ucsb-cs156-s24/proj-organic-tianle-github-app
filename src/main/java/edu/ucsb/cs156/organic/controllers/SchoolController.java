@@ -73,7 +73,6 @@ public class SchoolController extends ApiController{
         return school;
     }
 
-
     @Operation(summary= "List all schools")
     @PreAuthorize("hasRole('ROLE_USER')")
     @GetMapping("/all")
