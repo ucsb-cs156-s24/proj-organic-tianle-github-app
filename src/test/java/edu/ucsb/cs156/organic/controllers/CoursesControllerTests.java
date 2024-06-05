@@ -18,6 +18,7 @@ import static org.awaitility.Awaitility.await;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -700,7 +701,7 @@ public class CoursesControllerTests extends ControllerTestCase {
 
                 when(courseRepository.findById(eq(courseBefore.getId()))).thenReturn(Optional.of(courseBefore));
                 when(courseRepository.save(eq(courseAfter))).thenReturn(courseAfter);
-                
+
                 GitHub fake = mock(GitHub.class);
                 GHApp fakeApp = mock(GHApp.class);
                 GHAppInstallation fakeInst = mock(GHAppInstallation.class);
@@ -1049,178 +1050,189 @@ public class CoursesControllerTests extends ControllerTestCase {
                 assertEquals(expectedMap, responseMap);
         }
 
-        // @WithMockUser(roles = { "ADMIN" })
-        // @Test
-        // public void admin_can_query_github_app_status() throws Exception {
-        // // arrange
-        // Course course2 = course1;
-        // GitHubAppOrg tempOrg = mock(GitHubAppOrg.class);
-        // tempOrg.instId = "123";
-        // course2.setGithubAppInstallationId(0);
-        // when(courseRepository.findById(eq(1L))).thenReturn(Optional.of(course2));
-        // when(gitHubApp.org(anyString())).thenReturn(tempOrg);
-        // when(gitHubApp.appInfo()).thenReturn(new JSONObject("{\"slug\":\"123\"}"));
+        @WithMockUser(roles = { "ADMIN" })
+        @Test
+        public void admin_can_query_github_app_status() throws Exception {
+                // arrange
+                Course course2 = course1;
+                course2.setGithubAppInstallationId(0);
+                when(courseRepository.findById(eq(1L))).thenReturn(Optional.of(course2));
 
-        // // act
-        // MvcResult response = mockMvc.perform(get("/api/courses/github?id=1"))
-        // .andExpect(status().isOk()).andReturn();
+                GitHub fake = mock(GitHub.class);
+                GHApp fakeApp = mock(GHApp.class);
+                GHAppInstallation fakeInst = mock(GHAppInstallation.class);
+                when(gitHubBuilderFactory.build(any(JwtProvider.class))).thenReturn(fake);
+                when(fake.getApp()).thenReturn(fakeApp);
+                when(fakeApp.getInstallationByOrganization(any())).thenReturn(fakeInst);
+                when(fakeInst.getId()).thenReturn(123L);
+                when(fakeApp.getSlug()).thenReturn("123");
 
-        // // assert
-        // verify(courseRepository, times(1)).findById(eq(1L));
-        // verify(gitHubApp, times(1)).org(eq("ucsb-cs156-f23"));
+                // act
+                MvcResult response = mockMvc.perform(get("/api/courses/github?id=1"))
+                                .andExpect(status().isOk()).andReturn();
 
-        // OrgStatus o =
-        // OrgStatus.builder().org("ucsb-cs156-f23").githubAppInstalled(true).name("123").build();
+                // assert
+                verify(courseRepository, times(1)).findById(eq(1L));
+                verify(fakeApp, times(1)).getInstallationByOrganization(eq("ucsb-cs156-f23"));
 
-        // String expectedJson = mapper.writeValueAsString(o);
-        // String responseString = response.getResponse().getContentAsString();
-        // assertEquals(expectedJson, responseString);
-        // }
+                OrgStatus o = OrgStatus.builder().org("ucsb-cs156-f23").githubAppInstalled(true).name("123").build();
 
-        // @WithMockUser(roles = { "ADMIN" })
-        // @Test
-        // public void admin_can_query_github_app_status_with_error() throws Exception {
-        // // arrange
-        // Course course2 = mock(Course.class);
-        // when(course2.getGithubOrg()).thenReturn(course1.getGithubOrg());
-        // GitHubAppOrg tempOrg = mock(GitHubAppOrg.class);
-        // tempOrg.instId = "123";
-        // when(courseRepository.findById(eq(1L))).thenReturn(Optional.of(course2));
-        // when(gitHubApp.org(anyString())).thenReturn(tempOrg);
-        // when(gitHubApp.appInfo()).thenThrow(new
-        // GitHubAppException("ucsb-cs156-f23"));
+                String expectedJson = mapper.writeValueAsString(o);
+                String responseString = response.getResponse().getContentAsString();
+                assertEquals(expectedJson, responseString);
+        }
 
-        // // act
-        // MvcResult response = mockMvc.perform(get("/api/courses/github?id=1"))
-        // .andExpect(status().isOk()).andReturn();
+        @WithMockUser(roles = { "ADMIN" })
+        @Test
+        public void admin_can_query_github_app_status_with_error() throws Exception {
+                // arrange
+                Course course2 = mock(Course.class);
+                when(course2.getGithubOrg()).thenReturn(course1.getGithubOrg());
+                when(courseRepository.findById(eq(1L))).thenReturn(Optional.of(course2));
 
-        // // assert
-        // verify(courseRepository, times(1)).findById(eq(1L));
+                GitHub fake = mock(GitHub.class);
+                GHApp fakeApp = mock(GHApp.class);
+                GHAppInstallation fakeInst = mock(GHAppInstallation.class);
+                when(gitHubBuilderFactory.build(any(JwtProvider.class))).thenReturn(fake);
+                when(fake.getApp()).thenThrow(new IOException("Failed to communicate with github"));
+                when(fakeApp.getInstallationByOrganization(any())).thenReturn(fakeInst);
+                when(fakeInst.getId()).thenReturn(123L);
+                when(fakeApp.getSlug()).thenReturn("123");
 
-        // verify(course2, times(1)).setGithubAppInstallationId(eq(0L));
+                // act
+                MvcResult response = mockMvc.perform(get("/api/courses/github?id=1"))
+                                .andExpect(status().isOk()).andReturn();
 
-        // verify(courseRepository, times(1)).save(eq(course2));
+                // assert
+                verify(courseRepository, times(1)).findById(eq(1L));
 
-        // OrgStatus o =
-        // OrgStatus.builder().org("ucsb-cs156-f23").githubAppInstalled(false).name("")
-        // .exceptionThrown(true)
-        // .exceptionMessage("edu.ucsb.cs156.github.GitHubAppException:
-        // ucsb-cs156-f23").build();
+                verify(course2, times(1)).setGithubAppInstallationId(eq(0L));
 
-        // String expectedJson = mapper.writeValueAsString(o);
-        // String responseString = response.getResponse().getContentAsString();
-        // assertEquals(expectedJson, responseString);
-        // }
+                verify(courseRepository, times(1)).save(eq(course2));
 
-        // @WithMockUser(roles = { "USER" })
-        // @Test
-        // public void user_can_query_github_app_status_if_is_staff() throws Exception {
-        // // arrange
-        // Staff courseStaff1 = Staff.builder()
-        // .id(1L)
-        // .courseId(course1.getId())
-        // .build();
-        // when(courseStaffRepository.findByCourseIdAndGithubId(any(), any()))
-        // .thenReturn(Optional.of(courseStaff1));
-        // Course course2 = course1;
-        // GitHubAppOrg tempOrg = mock(GitHubAppOrg.class);
-        // tempOrg.instId = "123";
-        // course2.setGithubAppInstallationId(0);
-        // when(courseRepository.findById(eq(1L))).thenReturn(Optional.of(course2));
-        // when(gitHubApp.org(anyString())).thenReturn(tempOrg);
-        // when(gitHubApp.appInfo()).thenReturn(new JSONObject("{\"slug\":\"123\"}"));
+                OrgStatus o = OrgStatus.builder().org("ucsb-cs156-f23").githubAppInstalled(false).name("")
+                                .exceptionThrown(true)
+                                .exceptionMessage("java.io.IOException: Failed to communicate with github").build();
 
-        // // act
-        // MvcResult response = mockMvc.perform(get("/api/courses/github?id=1"))
-        // .andExpect(status().isOk()).andReturn();
+                String expectedJson = mapper.writeValueAsString(o);
+                String responseString = response.getResponse().getContentAsString();
+                assertEquals(expectedJson, responseString);
+        }
 
-        // // assert
-        // verify(courseRepository, times(1)).findById(eq(1L));
-        // verify(gitHubApp, times(1)).org(eq("ucsb-cs156-f23"));
+        @WithMockUser(roles = { "USER" })
+        @Test
+        public void user_can_query_github_app_status_if_is_staff() throws Exception {
+                // arrange
+                Staff courseStaff1 = Staff.builder()
+                                .id(1L)
+                                .courseId(course1.getId())
+                                .build();
+                when(courseStaffRepository.findByCourseIdAndGithubId(any(), any()))
+                                .thenReturn(Optional.of(courseStaff1));
+                Course course2 = course1;
+                course2.setGithubAppInstallationId(0);
+                when(courseRepository.findById(eq(1L))).thenReturn(Optional.of(course2));
 
-        // OrgStatus o =
-        // OrgStatus.builder().org("ucsb-cs156-f23").name("123").githubAppInstalled(true).build();
+                GitHub fake = mock(GitHub.class);
+                GHApp fakeApp = mock(GHApp.class);
+                GHAppInstallation fakeInst = mock(GHAppInstallation.class);
+                when(gitHubBuilderFactory.build(any(JwtProvider.class))).thenReturn(fake);
+                when(fake.getApp()).thenReturn(fakeApp);
+                when(fakeApp.getInstallationByOrganization(any())).thenReturn(fakeInst);
+                when(fakeInst.getId()).thenReturn(123L);
+                when(fakeApp.getSlug()).thenReturn("123");
+                // act
+                MvcResult response = mockMvc.perform(get("/api/courses/github?id=1"))
+                                .andExpect(status().isOk()).andReturn();
 
-        // String expectedJson = mapper.writeValueAsString(o);
-        // String responseString = response.getResponse().getContentAsString();
-        // assertEquals(expectedJson, responseString);
-        // assertEquals(123, course2.getGithubAppInstallationId());
-        // }
+                // assert
+                verify(courseRepository, times(1)).findById(eq(1L));
+                verify(fakeApp, times(1)).getInstallationByOrganization(eq("ucsb-cs156-f23"));
 
-        // @WithMockUser(roles = { "USER" })
-        // @Test
-        // public void user_can_not_query_github_app_status() throws Exception {
-        // // arrange
-        // when(courseRepository.findById(eq(1L))).thenReturn(Optional.of(course1));
-        // when(gitHubApp.org(anyString())).thenReturn(null);
-        // when(gitHubApp.appInfo()).thenReturn(new JSONObject("{\"slug\":\"123\"}"));
+                OrgStatus o = OrgStatus.builder().org("ucsb-cs156-f23").name("123").githubAppInstalled(true).build();
 
-        // // act
-        // MvcResult response = mockMvc.perform(get("/api/courses/github?id=1"))
-        // .andExpect(status().isForbidden()).andReturn();
-        // }
+                String expectedJson = mapper.writeValueAsString(o);
+                String responseString = response.getResponse().getContentAsString();
+                assertEquals(expectedJson, responseString);
+                assertEquals(123, course2.getGithubAppInstallationId());
+        }
 
-        // @WithMockUser(roles = { "USER" })
-        // @Test
-        // public void user_can_not_query_if_dne() throws Exception {
-        // // arrange
-        // User currentUser = currentUserService.getCurrentUser().getUser();
+        @WithMockUser(roles = { "USER" })
+        @Test
+        public void user_can_not_query_github_app_status() throws Exception {
+                // arrange
+                when(courseRepository.findById(eq(1L))).thenReturn(Optional.of(course1));
 
-        // when(courseRepository.findById(eq(course1.getId()))).thenReturn(Optional.of(course1));
-        // when(courseStaffRepository.findByCourseIdAndGithubId(any(),
-        // any())).thenReturn(Optional.empty());
+                // act
+                MvcResult response = mockMvc.perform(get("/api/courses/github?id=1"))
+                                .andExpect(status().isForbidden()).andReturn();
+        }
 
-        // // act
-        // mockMvc.perform(get("/api/courses/github?id=1"))
-        // .andExpect(status().isForbidden());
+        @WithMockUser(roles = { "USER" })
+        @Test
+        public void user_can_not_query_if_dne() throws Exception {
+                // arrange
+                User currentUser = currentUserService.getCurrentUser().getUser();
 
-        // verify(courseRepository, times(1)).findById(eq(1L));
-        // }
+                when(courseRepository.findById(eq(course1.getId()))).thenReturn(Optional.of(course1));
+                when(courseStaffRepository.findByCourseIdAndGithubId(any(),
+                                any())).thenReturn(Optional.empty());
 
-        // @WithMockUser(roles = { "USER" })
-        // @Test
-        // public void admin_can_query_github_app_status_that_dne() throws Exception {
-        // // arrange
-        // when(courseRepository.findById(eq(1L))).thenReturn(Optional.empty());
-        // when(gitHubApp.org(anyString())).thenReturn(null);
+                // act
+                mockMvc.perform(get("/api/courses/github?id=1"))
+                                .andExpect(status().isForbidden());
 
-        // // act
-        // MvcResult response = mockMvc.perform(get("/api/courses/github?id=1"))
-        // .andExpect(status().isNotFound()).andReturn();
-        // }
+                verify(courseRepository, times(1)).findById(eq(1L));
+        }
 
-        // @WithMockUser(roles = { "ADMIN" })
-        // @Test
-        // public void admin_can_query_github_app_status_not_linked() throws Exception {
-        // // arrange
-        // Course fakeCourse = mock(Course.class);
-        // when(fakeCourse.getGithubOrg()).thenReturn(course1.getGithubOrg());
-        // when(courseRepository.findById(eq(1L))).thenReturn(Optional.of(fakeCourse));
-        // when(gitHubApp.org(anyString())).thenThrow(new
-        // GitHubAppException("ucsb-cs156-f23"));
-        // when(gitHubApp.appInfo()).thenReturn(new JSONObject("{\"slug\":\"123\"}"));
+        @WithMockUser(roles = { "USER" })
+        @Test
+        public void admin_can_query_github_app_status_that_dne() throws Exception {
+                // arrange
+                when(courseRepository.findById(eq(1L))).thenReturn(Optional.empty());
 
-        // // act
-        // MvcResult response = mockMvc.perform(get("/api/courses/github?id=1"))
-        // .andExpect(status().isOk()).andReturn();
+                // act
+                MvcResult response = mockMvc.perform(get("/api/courses/github?id=1"))
+                                .andExpect(status().isNotFound()).andReturn();
+        }
 
-        // // assert
-        // verify(courseRepository, times(1)).findById(eq(1L));
-        // verify(gitHubApp, times(1)).org(eq("ucsb-cs156-f23"));
+        @WithMockUser(roles = { "ADMIN" })
+        @Test
+        public void admin_can_query_github_app_status_not_linked() throws Exception {
+                // arrange
+                Course fakeCourse = mock(Course.class);
+                when(fakeCourse.getGithubOrg()).thenReturn(course1.getGithubOrg());
+                when(courseRepository.findById(eq(1L))).thenReturn(Optional.of(fakeCourse));
+                
 
-        // verify(fakeCourse, times(1)).setGithubAppInstallationId(eq(0L));
-        // verify(courseRepository, times(1)).save(eq(fakeCourse));
+                GitHub fake = mock(GitHub.class);
+                GHApp fakeApp = mock(GHApp.class);
+                GHAppInstallation fakeInst = mock(GHAppInstallation.class);
+                when(gitHubBuilderFactory.build(any(JwtProvider.class))).thenReturn(fake);
+                when(fake.getApp()).thenReturn(fakeApp);
+                when(fakeApp.getInstallationByOrganization(any())).thenThrow(new IOException("Failed to get - DNE"));
+                when(fakeInst.getId()).thenReturn(123L);
+                when(fakeApp.getSlug()).thenReturn("123");
 
-        // OrgStatus o =
-        // OrgStatus.builder().org("ucsb-cs156-f23").githubAppInstalled(false).name("")
-        // .exceptionThrown(true)
-        // .exceptionMessage("edu.ucsb.cs156.github.GitHubAppException:
-        // ucsb-cs156-f23").build();
+                // act
+                MvcResult response = mockMvc.perform(get("/api/courses/github?id=1"))
+                                .andExpect(status().isOk()).andReturn();
 
-        // String expectedJson = mapper.writeValueAsString(o);
-        // String responseString = response.getResponse().getContentAsString();
-        // assertEquals(expectedJson, responseString);
-        // }
+                // assert
+                verify(courseRepository, times(1)).findById(eq(1L));
+                verify(fakeApp, times(1)).getInstallationByOrganization(eq("ucsb-cs156-f23"));
+
+                verify(fakeCourse, times(1)).setGithubAppInstallationId(eq(0L));
+                verify(courseRepository, times(1)).save(eq(fakeCourse));
+
+                OrgStatus o = OrgStatus.builder().org("ucsb-cs156-f23").githubAppInstalled(false).name("123")
+                                .exceptionThrown(true)
+                                .exceptionMessage("java.io.IOException: Failed to get - DNE").build();
+
+                String expectedJson = mapper.writeValueAsString(o);
+                String responseString = response.getResponse().getContentAsString();
+                assertEquals(expectedJson, responseString);
+        }
 
         // @WithMockUser(roles = { "USER" })
         // @Test
