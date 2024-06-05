@@ -170,7 +170,7 @@ public class CoursesController extends ApiController {
         GitHub gitHub;
         GHApp currApp;
         try {
-            gitHub = new GitHubBuilder().withJwtToken(jwtProvider.getJwt()).build();
+            gitHub = gitHubBuilderFactory.build(jwtProvider);
             currApp = gitHub.getApp();
         } catch (Exception e) {
             log.error("EXCEPTION: ", e);
@@ -441,7 +441,8 @@ public class CoursesController extends ApiController {
         List<GHEmail> emails;
 
         try {
-            currUser = GitHub.connectUsingOAuth(oauthToken.getToken()).getMyself();
+            
+            currUser = gitHubBuilderFactory.buildOauth(oauthToken.getToken()).getMyself();
             emails = currUser.getEmails2();
         } catch (Exception e) {
             log.warn(
@@ -481,8 +482,8 @@ public class CoursesController extends ApiController {
             GHAppInstallation inst = hub.getApp()
                     .getInstallationByOrganization(targetCourse.getGithubOrg());
 
-            GHOrganization org = new GitHubBuilder().withAppInstallationToken(inst.createToken().create().getToken())
-                    .build().getOrganization(targetCourse.getGithubOrg());
+            GHOrganization org = gitHubBuilderFactory.build(inst.createToken().create().getToken())
+                    .getOrganization(targetCourse.getGithubOrg());
             log.warn("\u001B[33m--------- GOING TO INVITE ----------\u001B[0m");
             org.add(currUser, GHOrganization.Role.MEMBER);
         } catch (Exception e) {

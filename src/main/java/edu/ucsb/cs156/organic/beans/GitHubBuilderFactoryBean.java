@@ -12,7 +12,7 @@ import edu.ucsb.cs156.github.JwtProvider;
 public class GitHubBuilderFactoryBean {
 
     @Bean
-    public GitHubBuilderFactory jwtProvider() {
+    public GitHubBuilderFactory gitHubBuilderFactory() {
         return new GitHubBuilderFactory();
     }
 }
