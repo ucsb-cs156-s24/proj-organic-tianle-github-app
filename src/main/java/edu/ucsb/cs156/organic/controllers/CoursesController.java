@@ -240,7 +240,6 @@ public class CoursesController extends ApiController {
             course.setGithubAppInstallationId(inst.getId());
         } catch (Exception e) {
             log.error("EXCEPTION: ", e);
-            course.setGithubAppInstallationId(0);
             courseRepository.save(course);
             User u = getCurrentUser().getUser();
 

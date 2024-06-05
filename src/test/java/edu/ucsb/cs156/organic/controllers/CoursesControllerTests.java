@@ -674,6 +674,7 @@ public class CoursesControllerTests extends ControllerTestCase {
                 Course courseBefore = course1;
 
                 Course courseAfter = course2;
+                courseBefore.setGithubAppInstallationId(123);
                 courseAfter.setSchool("UCSD");
                 courseAfter.setGithubAppInstallationId(0);
 
@@ -692,6 +693,7 @@ public class CoursesControllerTests extends ControllerTestCase {
                                 .andExpect(status().isOk()).andReturn();
 
                 // assert
+                assertEquals(courseBefore.getGithubAppInstallationId(), 0);
                 verify(courseRepository, times(1)).save(courseBefore);
                 String expectedJson = mapper.writeValueAsString(courseAfter);
                 String responseString = response.getResponse().getContentAsString();
