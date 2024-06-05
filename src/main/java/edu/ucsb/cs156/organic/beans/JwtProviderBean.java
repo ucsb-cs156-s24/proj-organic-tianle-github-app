@@ -4,10 +4,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import edu.ucsb.cs156.github.GitHubApp;
+import edu.ucsb.cs156.github.JwtProvider;
 
 @Configuration
-public class GitHubAppBean {
+public class JwtProviderBean {
 
     @Value("${spring.security.oauth2.client.registration.github.client-id}")
     private String clientId;
@@ -19,8 +19,8 @@ public class GitHubAppBean {
     private String clientPkPath;
 
     @Bean
-    public GitHubApp gitHubApp() {
-        return new GitHubApp(this.clientId, this.clientPkPath);
+    public JwtProvider jwtProvider() {
+        return new JwtProvider(this.clientId, this.clientPkPath);
     }
 
 }

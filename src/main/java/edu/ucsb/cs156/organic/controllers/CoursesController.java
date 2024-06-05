@@ -37,12 +37,12 @@ import edu.ucsb.cs156.organic.entities.School;
 
 import org.springframework.security.access.AccessDeniedException;
 
-import edu.ucsb.cs156.github.GitHubApp;
-import edu.ucsb.cs156.github.GitHubAppException;
-import edu.ucsb.cs156.github.GitHubAppOrg;
-import edu.ucsb.cs156.github.GitHubToken;
-import edu.ucsb.cs156.github.GitHubUserApi;
 import edu.ucsb.cs156.github.JwtProvider;
+
+import org.kohsuke.github.GHApp;
+import org.kohsuke.github.GHAppInstallation;
+import org.kohsuke.github.GHOrganization;
+import org.kohsuke.github.GHUser;
 import org.kohsuke.github.GitHub;
 
 import java.time.LocalDateTime;
@@ -98,13 +98,7 @@ public class CoursesController extends ApiController {
     StudentRepository studentRepository;
 
     @Autowired
-    GitHubApp gitHubApp;
-
-    @Autowired
-    GitHubToken accessToken;
-
-    @Autowired
-    GitHubUserApi gitHubUserApi;
+    JwtProvider jwtProvider;
 
     @Operation(summary = "List all courses")
     @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
@@ -160,9 +154,11 @@ public class CoursesController extends ApiController {
         log.info("****************************************");
         log.info("About to call gitHubApp.appInfo()...");
 
-        JSONObject appInfo = null;
+        GitHub gitHub;
+        GHApp currApp;
         try {
-            appInfo = gitHubApp.appInfo();
+            gitHub = GitHub.connectUsingOAuth(jwtProvider.getJwt());
+            currApp = gitHub.getApp();
         } catch (Exception e) {
             log.error("EXCEPTION: ", e);
             course.setGithubAppInstallationId(0);
@@ -177,12 +173,13 @@ public class CoursesController extends ApiController {
         }
 
         log.info("****************************************");
-        log.info("appInfo={}", appInfo.toString());
+        log.info("appInfo={}", currApp.toString());
         log.info("****************************************");
 
+        GHAppInstallation currOrg = null;
         try {
-            GitHubAppOrg org = gitHubApp.org(githubOrg);
-            course.setGithubAppInstallationId(Long.parseLong(org.instId));
+            currOrg = currApp.getInstallationByOrganization(githubOrg);
+            course.setGithubAppInstallationId(currOrg.getId());
             courseRepository.save(course);
         } catch (Exception e) {
             log.error("CAUGHT EXCEPTION \u001b[31m" + e.toString() + "\u001b[0m");
@@ -191,7 +188,7 @@ public class CoursesController extends ApiController {
             return OrgStatus.builder()
                     .org(githubOrg)
                     .githubAppInstalled(false)
-                    .name("")
+                    .name(currApp.getSlug())
                     .exceptionThrown(true)
                     .exceptionMessage(e.toString())
                     .build();
@@ -199,7 +196,7 @@ public class CoursesController extends ApiController {
         return OrgStatus.builder()
                 .org(githubOrg)
                 .githubAppInstalled(true)
-                .name(appInfo.getString("slug"))
+                .name(currApp.getSlug())
                 .build();
     }
 
@@ -225,10 +222,14 @@ public class CoursesController extends ApiController {
                 .githubAppInstallationId(0)
                 .build();
         try {
-            GitHubAppOrg org = gitHubApp.org(githubOrg);
-            course.setGithubAppInstallationId(Long.parseLong(org.instId));
+            GHAppInstallation inst = GitHub.connectUsingOAuth(jwtProvider.getJwt()).getApp()
+                    .getInstallationByOrganization(githubOrg);
+            course.setGithubAppInstallationId(inst.getId());
         } catch (Exception e) {
-            // Github App not installed
+            log.error("EXCEPTION: ", e);
+            course.setGithubAppInstallationId(0);
+            courseRepository.save(course);
+            return course;
         }
 
         Course savedCourse = courseRepository.save(course);
@@ -332,11 +333,14 @@ public class CoursesController extends ApiController {
         course.setEndDate(endDate);
         course.setGithubOrg(githubOrg);
         try {
-            GitHubAppOrg org = gitHubApp.org(githubOrg);
-            course.setGithubAppInstallationId(Long.parseLong(org.instId));
+            GHAppInstallation inst = GitHub.connectUsingOAuth(jwtProvider.getJwt()).getApp()
+                    .getInstallationByOrganization(githubOrg);
+            course.setGithubAppInstallationId(inst.getId());
         } catch (Exception e) {
-            // Github App not installed
-            log.error("CAUGHT EXCEPTION \u001b[31m" + e.toString() + "\u001b[0m");
+            log.error("EXCEPTION: ", e);
+            course.setGithubAppInstallationId(0);
+            courseRepository.save(course);
+            return course;
         }
 
         course = courseRepository.save(course);
@@ -411,7 +415,7 @@ public class CoursesController extends ApiController {
 
         String emailSufix = s.getAbbrev() + ".edu";
 
-        ArrayList<String> emails = gitHubUserApi.userEmails();
+            GHUser currUser = GitHub.connectUsingOAuth(jwtProvider.getJwt()).getUser(u.getGithubLogin());
 
         boolean found = false;
         String schoolEmail = "";
@@ -439,6 +443,17 @@ public class CoursesController extends ApiController {
         }
         // Check roster here
         // Send org Invitation
+        try {
+            GHAppInstallation inst = GitHub.connectUsingOAuth(jwtProvider.getJwt()).getApp()
+                    .getInstallationByOrganization(targetCourse.getGithubOrg());
+            GHOrganization org = GitHub.connectUsingOAuth(jwtProvider.getJwt()).getOrganization(targetCourse.getGithubOrg());
+            org.add()
+        } catch (Exception e) {
+            log.error("EXCEPTION: ", e);
+            course.setGithubAppInstallationId(0);
+            courseRepository.save(course);
+            return course;
+        }
         try {
             GitHubAppOrg org = gitHubApp.org(targetCourse.getGithubOrg());
             String res = org.inviteUserToThisOrg(u.getGithubId());
