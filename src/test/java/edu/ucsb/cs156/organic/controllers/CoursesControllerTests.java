@@ -51,6 +51,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 
 import edu.ucsb.cs156.github.JwtProvider;
+import edu.ucsb.cs156.github.OauthToken;
 import edu.ucsb.cs156.organic.entities.Course;
 import edu.ucsb.cs156.organic.entities.School;
 import edu.ucsb.cs156.organic.entities.Staff;
@@ -96,6 +97,9 @@ public class CoursesControllerTests extends ControllerTestCase {
 
         @MockBean
         JwtProvider jwtProvider;
+
+        @MockBean
+        OauthToken oauthToken;
 
         @Autowired
         CurrentUserService userService;
