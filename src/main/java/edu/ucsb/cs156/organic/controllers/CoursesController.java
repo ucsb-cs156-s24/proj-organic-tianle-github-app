@@ -37,6 +37,7 @@ import edu.ucsb.cs156.organic.entities.School;
 
 import org.springframework.security.access.AccessDeniedException;
 
+import edu.ucsb.cs156.github.GitHubBuilderFactory;
 import edu.ucsb.cs156.github.JwtProvider;
 import edu.ucsb.cs156.github.OauthToken;
 
@@ -104,6 +105,9 @@ public class CoursesController extends ApiController {
 
     @Autowired
     JwtProvider jwtProvider;
+
+    @Autowired
+    GitHubBuilderFactory gitHubBuilderFactory;
 
     @Autowired
     OauthToken oauthToken;
@@ -231,13 +235,22 @@ public class CoursesController extends ApiController {
                 .githubAppInstallationId(0)
                 .build();
         try {
-            GHAppInstallation inst = new GitHubBuilder().withJwtToken(jwtProvider.getJwt()).build().getApp()
+            GHAppInstallation inst = gitHubBuilderFactory.build(jwtProvider).getApp()
                     .getInstallationByOrganization(githubOrg);
             course.setGithubAppInstallationId(inst.getId());
         } catch (Exception e) {
             log.error("EXCEPTION: ", e);
             course.setGithubAppInstallationId(0);
             courseRepository.save(course);
+            User u = getCurrentUser().getUser();
+
+            Staff courseStaff = Staff.builder()
+                    .courseId(course.getId())
+                    .githubId(u.getGithubId())
+                    .build();
+
+            log.info("courseStaff={}", courseStaff);
+            courseStaffRepository.save(courseStaff);
             return course;
         }
 
@@ -342,7 +355,7 @@ public class CoursesController extends ApiController {
         course.setEndDate(endDate);
         course.setGithubOrg(githubOrg);
         try {
-            GHAppInstallation inst = new GitHubBuilder().withJwtToken(jwtProvider.getJwt()).build().getApp()
+            GHAppInstallation inst = gitHubBuilderFactory.build(jwtProvider).getApp()
                     .getInstallationByOrganization(githubOrg);
             course.setGithubAppInstallationId(inst.getId());
         } catch (Exception e) {
@@ -426,13 +439,14 @@ public class CoursesController extends ApiController {
         String emailSufix = s.getAbbrev() + ".edu";
         GHMyself currUser;
         List<GHEmail> emails;
-        
+
         try {
             currUser = GitHub.connectUsingOAuth(oauthToken.getToken()).getMyself();
             emails = currUser.getEmails2();
         } catch (Exception e) {
-        log.warn("\u001B[33m-----------------------------USER EMAIL ERROR -----------------------------------\u001B[0m");
-        log.error(e.toString());
+            log.warn(
+                    "\u001B[33m-----------------------------USER EMAIL ERROR -----------------------------------\u001B[0m");
+            log.error(e.toString());
             throw new AccessDeniedException("Failed to get user email.");
         }
 
@@ -463,11 +477,12 @@ public class CoursesController extends ApiController {
         // Check roster here
         // Send org Invitation
         try {
-            GitHub hub = new GitHubBuilder().withJwtToken(jwtProvider.getJwt()).build();
+            GitHub hub = gitHubBuilderFactory.build(jwtProvider);
             GHAppInstallation inst = hub.getApp()
                     .getInstallationByOrganization(targetCourse.getGithubOrg());
-                    
-            GHOrganization org = new GitHubBuilder().withAppInstallationToken(inst.createToken().create().getToken()).build().getOrganization(targetCourse.getGithubOrg());
+
+            GHOrganization org = new GitHubBuilder().withAppInstallationToken(inst.createToken().create().getToken())
+                    .build().getOrganization(targetCourse.getGithubOrg());
             log.warn("\u001B[33m--------- GOING TO INVITE ----------\u001B[0m");
             org.add(currUser, GHOrganization.Role.MEMBER);
         } catch (Exception e) {
