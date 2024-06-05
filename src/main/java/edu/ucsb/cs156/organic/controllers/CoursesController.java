@@ -466,7 +466,9 @@ public class CoursesController extends ApiController {
             GitHub hub = new GitHubBuilder().withJwtToken(jwtProvider.getJwt()).build();
             GHAppInstallation inst = hub.getApp()
                     .getInstallationByOrganization(targetCourse.getGithubOrg());
-            GHOrganization org = hub.getOrganization(targetCourse.getGithubOrg());
+                    
+            GHOrganization org = new GitHubBuilder().withAppInstallationToken(inst.createToken().create().getToken()).build().getOrganization(targetCourse.getGithubOrg());
+            log.warn("\u001B[33m--------- GOING TO INVITE ----------\u001B[0m");
             org.add(currUser, GHOrganization.Role.MEMBER);
         } catch (Exception e) {
             log.error(e.toString());
