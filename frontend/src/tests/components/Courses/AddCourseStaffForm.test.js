@@ -48,8 +48,8 @@ describe("AddCourseStaffForm tests", () => {
 
         fireEvent.click(submitButton);
 
-        await screen.findByText(/githubId is required/);
-        expect(screen.getByText(/githubId is required/)).toBeInTheDocument();
+        await screen.findByText(/githubLogin is required/);
+        expect(screen.getByText(/githubLogin is required/)).toBeInTheDocument();
     });
 
     test("No Error messsages on good input", async () => {
@@ -64,7 +64,7 @@ describe("AddCourseStaffForm tests", () => {
         );
         await screen.findByTestId("AddCourseStaffForm-githubId");
 
-        const githubId = screen.getByTestId("AddCourseStaffForm-githubId");
+        const githubId = screen.getByTestId("AddCourseStaffForm-githubLogin");
         const submitButton = screen.getByTestId("AddCourseStaffForm-submit");
 
         
@@ -74,7 +74,7 @@ describe("AddCourseStaffForm tests", () => {
         await waitFor(() => expect(mockSubmitAction).toHaveBeenCalled());
 
         expect(screen.queryByText(/courseId is required./)).not.toBeInTheDocument();
-        expect(screen.queryByText(/githubId is required./)).not.toBeInTheDocument();
+        expect(screen.queryByText(/githubLogin is required./)).not.toBeInTheDocument();
 
     });
 
