@@ -62,6 +62,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 
 import java.util.Map;
+import static org.mockito.ArgumentMatchers.anyLong;
 
 @Slf4j
 @WebMvcTest(controllers = StudentsController.class)
@@ -155,7 +156,7 @@ public class StudentsControllerTests extends ControllerTestCase {
 
                 when(courseRepository.findById(eq(course1.getId()))).thenReturn(Optional.empty());
 
-                // act 
+                // act
                 MvcResult response = mockMvc.perform(get("/api/students/all?courseId=1"))
                                 .andExpect(status().isNotFound()).andReturn();
 
@@ -163,10 +164,9 @@ public class StudentsControllerTests extends ControllerTestCase {
 
                 verify(courseRepository, atLeastOnce()).findById(eq(course1.getId()));
                 String responseString = response.getResponse().getContentAsString();
-                Map<String,String> expectedMap = Map.of(
-                        "type", "EntityNotFoundException",
-                        "message", "Course with id 1 not found"
-                      );
+                Map<String, String> expectedMap = Map.of(
+                                "type", "EntityNotFoundException",
+                                "message", "Course with id 1 not found");
                 String expectedJson = mapper.writeValueAsString(expectedMap);
                 assertEquals(expectedJson, responseString);
         }
@@ -195,10 +195,9 @@ public class StudentsControllerTests extends ControllerTestCase {
 
                 verify(courseRepository, atLeastOnce()).findById(eq(course1.getId()));
                 String responseString = response.getResponse().getContentAsString();
-                Map<String,String> expectedMap = Map.of(
-                        "type", "EntityNotFoundException",
-                        "message", "Course with id 1 not found"
-                      );
+                Map<String, String> expectedMap = Map.of(
+                                "type", "EntityNotFoundException",
+                                "message", "Course with id 1 not found");
                 String expectedJson = mapper.writeValueAsString(expectedMap);
                 assertEquals(expectedJson, responseString);
         }
@@ -217,34 +216,34 @@ public class StudentsControllerTests extends ControllerTestCase {
 
                 // arrange
 
-                 Student student2After = Student.builder()
-                        .id(2L)
-                        .courseId(course1.getId())
-                        .fname("LAUREN")
-                        .lname("DEL PLAYA")
-                        .email("ldelplaya@umail.ucsb.edu")
-                        .studentId("A987654")
-                        .courseId(course1.getId())
-                        .build();
+                Student student2After = Student.builder()
+                                .id(2L)
+                                .courseId(course1.getId())
+                                .fname("LAUREN")
+                                .lname("DEL PLAYA")
+                                .email("ldelplaya@umail.ucsb.edu")
+                                .studentId("A987654")
+                                .courseId(course1.getId())
+                                .build();
 
-                  Student student3Before = Student.builder()
-                        .courseId(course1.getId())
-                        .fname("SABADO")
-                        .lname("TARDE")
-                        .email("sabadotarde@umail.ucsb.edu")
-                        .studentId("1234567")
-                        .courseId(course1.getId())
-                        .build();
+                Student student3Before = Student.builder()
+                                .courseId(course1.getId())
+                                .fname("SABADO")
+                                .lname("TARDE")
+                                .email("sabadotarde@umail.ucsb.edu")
+                                .studentId("1234567")
+                                .courseId(course1.getId())
+                                .build();
 
-                  Student student3After = Student.builder()
-                        .id(2L)
-                        .courseId(course1.getId())
-                        .fname("SABADO")
-                        .lname("TARDE")
-                        .email("sabadotarde@umail.ucsb.edu")
-                        .studentId("1234567")
-                        .courseId(course1.getId())
-                        .build();
+                Student student3After = Student.builder()
+                                .id(2L)
+                                .courseId(course1.getId())
+                                .fname("SABADO")
+                                .lname("TARDE")
+                                .email("sabadotarde@umail.ucsb.edu")
+                                .studentId("1234567")
+                                .courseId(course1.getId())
+                                .build();
 
                 MockMultipartFile file = new MockMultipartFile(
                                 "file",
@@ -273,10 +272,9 @@ public class StudentsControllerTests extends ControllerTestCase {
 
                 verify(courseRepository, atLeastOnce()).findById(eq(course1.getId()));
                 String responseString = response.getResponse().getContentAsString();
-                Map<String,String> expectedMap = Map.of(
-                        "filename", "egrades.csv",
-                        "message", "Inserted 1 new students, Updated 2 students"
-                      );
+                Map<String, String> expectedMap = Map.of(
+                                "filename", "egrades.csv",
+                                "message", "Inserted 1 new students, Updated 2 students");
                 String expectedJson = mapper.writeValueAsString(expectedMap);
                 assertEquals(expectedJson, responseString);
                 verify(studentRepository, atLeastOnce()).findByCourseIdAndStudentId(eq(course1.getId()), eq("A123456"));
@@ -285,6 +283,75 @@ public class StudentsControllerTests extends ControllerTestCase {
 
                 verify(studentRepository, atLeastOnce()).save(eq(student2After));
                 verify(studentRepository, atLeastOnce()).save(eq(student3Before));
+        }
+
+        @WithMockUser(roles = { "ADMIN" })
+        @Test
+        public void can_not_post_student_course_dne() throws Exception {
+                when(courseRepository.findById(eq(course1.getId()))).thenReturn(Optional.empty());
+                // act
+                MvcResult response = mockMvc.perform(
+                        post("/api/students/post?courseId=1&email=123@123.123&fname=Chris&lname=Gaucho&studentId=A123456")
+                        .with(csrf()))
+                        .andExpect(status().isNotFound()).andReturn();
+        }
+
+        @WithMockUser(roles = { "ADMIN" })
+        @Test
+        public void admin_can_post_student() throws Exception {
+                Student stu = Student.builder()
+                                .courseId(course1.getId())
+                                .fname("Chris")
+                                .lname("Gaucho")
+                                .email("123@123.123")
+                                .studentId("A123456")
+                                .build();
+                when(courseRepository.findById(anyLong())).thenReturn(Optional.of(course1));
+                when(studentRepository.save(any())).thenReturn(stu);
+                // act
+                MvcResult response = mockMvc.perform(
+                        post("/api/students/post?courseId=1&email=123@123.123&fname=Chris&lname=Gaucho&studentId=A123456").with(csrf()))
+                                .andExpect(status().isOk())
+                                .andReturn();
+                // assert
+                String expectedJson = mapper.writeValueAsString(stu);
+                String responseString = response.getResponse().getContentAsString();
+                assertEquals(expectedJson, responseString);
+        }
+
+        @WithMockUser(roles = { "USER" })
+        @Test
+        public void user_can_post_student_only_if_they_are_instructor() throws Exception {
+                Student stu = Student.builder()
+                                .courseId(course1.getId())
+                                .fname("Chris")
+                                .lname("Gaucho")
+                                .email("123@123.123")
+                                .studentId("A123456")
+                                .build();
+                when(courseRepository.findById(anyLong())).thenReturn(Optional.of(course1));
+                when(studentRepository.save(any())).thenReturn(stu);
+                when(staffRepository.findByCourseIdAndGithubId(any(),any())).thenReturn(Optional.of(Staff.builder().build()));
+                // act
+                MvcResult response = mockMvc.perform(
+                        post("/api/students/post?courseId=1&email=123@123.123&fname=Chris&lname=Gaucho&studentId=A123456").with(csrf()))
+                                .andExpect(status().isOk()).andReturn();
+                // assert
+                verify(staffRepository, atLeastOnce()).findByCourseIdAndGithubId(any(), any());
+                String expectedJson = mapper.writeValueAsString(stu);
+                String responseString = response.getResponse().getContentAsString();
+                assertEquals(expectedJson, responseString);
+        }
+
+        @WithMockUser(roles = { "USER" })
+        @Test
+        public void user_can_not_post_student_if_not_instructor() throws Exception {
+                when(courseRepository.findById(anyLong())).thenReturn(Optional.of(course1));
+                when(staffRepository.findByCourseIdAndGithubId(any(),any())).thenReturn(Optional.empty());
+                // act
+                MvcResult response = mockMvc.perform(
+                        post("/api/students/post?courseId=1&email=123@123.123&fname=Chris&lname=Gaucho&studentId=A123456").with(csrf()))
+                                .andExpect(status().isForbidden()).andReturn();
         }
 
 }
