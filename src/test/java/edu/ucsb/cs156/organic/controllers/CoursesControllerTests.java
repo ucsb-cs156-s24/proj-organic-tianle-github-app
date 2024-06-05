@@ -5,7 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -18,6 +20,7 @@ import static org.awaitility.Awaitility.await;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -27,14 +30,17 @@ import java.util.Optional;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import edu.ucsb.cs156.github.GitHubApp;
-import edu.ucsb.cs156.github.GitHubAppException;
-import edu.ucsb.cs156.github.GitHubAppOrg;
-import edu.ucsb.cs156.github.GitHubToken;
-import edu.ucsb.cs156.github.GitHubUserApi;
 
 import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
+import org.kohsuke.github.GHApp;
+import org.kohsuke.github.GHAppCreateTokenBuilder;
+import org.kohsuke.github.GHAppInstallation;
+import org.kohsuke.github.GHAppInstallationToken;
+import org.kohsuke.github.GHEmail;
+import org.kohsuke.github.GHMyself;
+import org.kohsuke.github.GHOrganization;
+import org.kohsuke.github.GitHub;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.AutoConfigureDataJpa;
@@ -55,6 +61,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 
+import edu.ucsb.cs156.github.GitHubBuilderFactory;
+import edu.ucsb.cs156.github.JwtProvider;
+import edu.ucsb.cs156.github.OauthToken;
 import edu.ucsb.cs156.organic.entities.Course;
 import edu.ucsb.cs156.organic.entities.School;
 import edu.ucsb.cs156.organic.entities.Staff;
@@ -99,13 +108,13 @@ public class CoursesControllerTests extends ControllerTestCase {
         SchoolRepository schoolRepository;
 
         @MockBean
-        GitHubApp gitHubApp;
+        JwtProvider jwtProvider;
 
         @MockBean
-        GitHubToken accessToken;
+        OauthToken oauthToken;
 
         @MockBean
-        GitHubUserApi gitHubUserApi;
+        GitHubBuilderFactory gitHubBuilderFactory;
 
         @Autowired
         CurrentUserService userService;
@@ -285,7 +294,7 @@ public class CoursesControllerTests extends ControllerTestCase {
                                 .build();
 
                 Course courseAfter = Course.builder()
-                                .id(222L)
+                                .id(0L)
                                 .name("CS16")
                                 .school("UCSB")
                                 .term("F23")
@@ -313,9 +322,13 @@ public class CoursesControllerTests extends ControllerTestCase {
         @Test
         public void an_admin_user_can_post_a_new_course_with_gha_ok() throws Exception {
                 // arrange
-                GitHubAppOrg tempOrg = mock(GitHubAppOrg.class);
-                tempOrg.instId = "123";
-                when(gitHubApp.org(any())).thenReturn(tempOrg);
+                GitHub fake = mock(GitHub.class);
+                GHApp fakeApp = mock(GHApp.class);
+                GHAppInstallation fakeInst = mock(GHAppInstallation.class);
+                when(gitHubBuilderFactory.build(any(JwtProvider.class))).thenReturn(fake);
+                when(fake.getApp()).thenReturn(fakeApp);
+                when(fakeApp.getInstallationByOrganization(any())).thenReturn(fakeInst);
+                when(fakeInst.getId()).thenReturn(123L);
 
                 Course courseBefore = Course.builder()
                                 .name("CS16")
@@ -368,7 +381,7 @@ public class CoursesControllerTests extends ControllerTestCase {
                                 .build();
 
                 Course courseAfter = Course.builder()
-                                .id(222L)
+                                .id(0L)
                                 .name("CS16")
                                 .school("UCSB")
                                 .term("F23")
@@ -695,9 +708,14 @@ public class CoursesControllerTests extends ControllerTestCase {
 
                 when(courseRepository.findById(eq(courseBefore.getId()))).thenReturn(Optional.of(courseBefore));
                 when(courseRepository.save(eq(courseAfter))).thenReturn(courseAfter);
-                GitHubAppOrg tempOrg = mock(GitHubAppOrg.class);
-                tempOrg.instId = "123";
-                when(gitHubApp.org(any())).thenReturn(tempOrg);
+
+                GitHub fake = mock(GitHub.class);
+                GHApp fakeApp = mock(GHApp.class);
+                GHAppInstallation fakeInst = mock(GHAppInstallation.class);
+                when(gitHubBuilderFactory.build(any(JwtProvider.class))).thenReturn(fake);
+                when(fake.getApp()).thenReturn(fakeApp);
+                when(fakeApp.getInstallationByOrganization(any())).thenReturn(fakeInst);
+                when(fakeInst.getId()).thenReturn(123L);
 
                 String urlTemplate = String.format(
                                 "/api/courses/update?id=%d&name=%s&school=%s&term=%s&startDate=%s&endDate=%s&githubOrg=%s",
@@ -1044,12 +1062,17 @@ public class CoursesControllerTests extends ControllerTestCase {
         public void admin_can_query_github_app_status() throws Exception {
                 // arrange
                 Course course2 = course1;
-                GitHubAppOrg tempOrg = mock(GitHubAppOrg.class);
-                tempOrg.instId = "123";
                 course2.setGithubAppInstallationId(0);
                 when(courseRepository.findById(eq(1L))).thenReturn(Optional.of(course2));
-                when(gitHubApp.org(anyString())).thenReturn(tempOrg);
-                when(gitHubApp.appInfo()).thenReturn(new JSONObject("{\"slug\":\"123\"}"));
+
+                GitHub fake = mock(GitHub.class);
+                GHApp fakeApp = mock(GHApp.class);
+                GHAppInstallation fakeInst = mock(GHAppInstallation.class);
+                when(gitHubBuilderFactory.build(any(JwtProvider.class))).thenReturn(fake);
+                when(fake.getApp()).thenReturn(fakeApp);
+                when(fakeApp.getInstallationByOrganization(any())).thenReturn(fakeInst);
+                when(fakeInst.getId()).thenReturn(123L);
+                when(fakeApp.getSlug()).thenReturn("123");
 
                 // act
                 MvcResult response = mockMvc.perform(get("/api/courses/github?id=1"))
@@ -1057,7 +1080,7 @@ public class CoursesControllerTests extends ControllerTestCase {
 
                 // assert
                 verify(courseRepository, times(1)).findById(eq(1L));
-                verify(gitHubApp, times(1)).org(eq("ucsb-cs156-f23"));
+                verify(fakeApp, times(1)).getInstallationByOrganization(eq("ucsb-cs156-f23"));
 
                 OrgStatus o = OrgStatus.builder().org("ucsb-cs156-f23").githubAppInstalled(true).name("123").build();
 
@@ -1072,11 +1095,16 @@ public class CoursesControllerTests extends ControllerTestCase {
                 // arrange
                 Course course2 = mock(Course.class);
                 when(course2.getGithubOrg()).thenReturn(course1.getGithubOrg());
-                GitHubAppOrg tempOrg = mock(GitHubAppOrg.class);
-                tempOrg.instId = "123";
                 when(courseRepository.findById(eq(1L))).thenReturn(Optional.of(course2));
-                when(gitHubApp.org(anyString())).thenReturn(tempOrg);
-                when(gitHubApp.appInfo()).thenThrow(new GitHubAppException("ucsb-cs156-f23"));
+
+                GitHub fake = mock(GitHub.class);
+                GHApp fakeApp = mock(GHApp.class);
+                GHAppInstallation fakeInst = mock(GHAppInstallation.class);
+                when(gitHubBuilderFactory.build(any(JwtProvider.class))).thenReturn(fake);
+                when(fake.getApp()).thenThrow(new IOException("Failed to communicate with github"));
+                when(fakeApp.getInstallationByOrganization(any())).thenReturn(fakeInst);
+                when(fakeInst.getId()).thenReturn(123L);
+                when(fakeApp.getSlug()).thenReturn("123");
 
                 // act
                 MvcResult response = mockMvc.perform(get("/api/courses/github?id=1"))
@@ -1091,7 +1119,7 @@ public class CoursesControllerTests extends ControllerTestCase {
 
                 OrgStatus o = OrgStatus.builder().org("ucsb-cs156-f23").githubAppInstalled(false).name("")
                                 .exceptionThrown(true)
-                                .exceptionMessage("edu.ucsb.cs156.github.GitHubAppException: ucsb-cs156-f23").build();
+                                .exceptionMessage("java.io.IOException: Failed to communicate with github").build();
 
                 String expectedJson = mapper.writeValueAsString(o);
                 String responseString = response.getResponse().getContentAsString();
@@ -1109,20 +1137,24 @@ public class CoursesControllerTests extends ControllerTestCase {
                 when(courseStaffRepository.findByCourseIdAndGithubId(any(), any()))
                                 .thenReturn(Optional.of(courseStaff1));
                 Course course2 = course1;
-                GitHubAppOrg tempOrg = mock(GitHubAppOrg.class);
-                tempOrg.instId = "123";
                 course2.setGithubAppInstallationId(0);
                 when(courseRepository.findById(eq(1L))).thenReturn(Optional.of(course2));
-                when(gitHubApp.org(anyString())).thenReturn(tempOrg);
-                when(gitHubApp.appInfo()).thenReturn(new JSONObject("{\"slug\":\"123\"}"));
 
+                GitHub fake = mock(GitHub.class);
+                GHApp fakeApp = mock(GHApp.class);
+                GHAppInstallation fakeInst = mock(GHAppInstallation.class);
+                when(gitHubBuilderFactory.build(any(JwtProvider.class))).thenReturn(fake);
+                when(fake.getApp()).thenReturn(fakeApp);
+                when(fakeApp.getInstallationByOrganization(any())).thenReturn(fakeInst);
+                when(fakeInst.getId()).thenReturn(123L);
+                when(fakeApp.getSlug()).thenReturn("123");
                 // act
                 MvcResult response = mockMvc.perform(get("/api/courses/github?id=1"))
                                 .andExpect(status().isOk()).andReturn();
 
                 // assert
                 verify(courseRepository, times(1)).findById(eq(1L));
-                verify(gitHubApp, times(1)).org(eq("ucsb-cs156-f23"));
+                verify(fakeApp, times(1)).getInstallationByOrganization(eq("ucsb-cs156-f23"));
 
                 OrgStatus o = OrgStatus.builder().org("ucsb-cs156-f23").name("123").githubAppInstalled(true).build();
 
@@ -1137,8 +1169,6 @@ public class CoursesControllerTests extends ControllerTestCase {
         public void user_can_not_query_github_app_status() throws Exception {
                 // arrange
                 when(courseRepository.findById(eq(1L))).thenReturn(Optional.of(course1));
-                when(gitHubApp.org(anyString())).thenReturn(null);
-                when(gitHubApp.appInfo()).thenReturn(new JSONObject("{\"slug\":\"123\"}"));
 
                 // act
                 MvcResult response = mockMvc.perform(get("/api/courses/github?id=1"))
@@ -1152,7 +1182,8 @@ public class CoursesControllerTests extends ControllerTestCase {
                 User currentUser = currentUserService.getCurrentUser().getUser();
 
                 when(courseRepository.findById(eq(course1.getId()))).thenReturn(Optional.of(course1));
-                when(courseStaffRepository.findByCourseIdAndGithubId(any(), any())).thenReturn(Optional.empty());
+                when(courseStaffRepository.findByCourseIdAndGithubId(any(),
+                                any())).thenReturn(Optional.empty());
 
                 // act
                 mockMvc.perform(get("/api/courses/github?id=1"))
@@ -1166,7 +1197,6 @@ public class CoursesControllerTests extends ControllerTestCase {
         public void admin_can_query_github_app_status_that_dne() throws Exception {
                 // arrange
                 when(courseRepository.findById(eq(1L))).thenReturn(Optional.empty());
-                when(gitHubApp.org(anyString())).thenReturn(null);
 
                 // act
                 MvcResult response = mockMvc.perform(get("/api/courses/github?id=1"))
@@ -1180,8 +1210,15 @@ public class CoursesControllerTests extends ControllerTestCase {
                 Course fakeCourse = mock(Course.class);
                 when(fakeCourse.getGithubOrg()).thenReturn(course1.getGithubOrg());
                 when(courseRepository.findById(eq(1L))).thenReturn(Optional.of(fakeCourse));
-                when(gitHubApp.org(anyString())).thenThrow(new GitHubAppException("ucsb-cs156-f23"));
-                when(gitHubApp.appInfo()).thenReturn(new JSONObject("{\"slug\":\"123\"}"));
+
+                GitHub fake = mock(GitHub.class);
+                GHApp fakeApp = mock(GHApp.class);
+                GHAppInstallation fakeInst = mock(GHAppInstallation.class);
+                when(gitHubBuilderFactory.build(any(JwtProvider.class))).thenReturn(fake);
+                when(fake.getApp()).thenReturn(fakeApp);
+                when(fakeApp.getInstallationByOrganization(any())).thenThrow(new IOException("Failed to get - DNE"));
+                when(fakeInst.getId()).thenReturn(123L);
+                when(fakeApp.getSlug()).thenReturn("123");
 
                 // act
                 MvcResult response = mockMvc.perform(get("/api/courses/github?id=1"))
@@ -1189,14 +1226,14 @@ public class CoursesControllerTests extends ControllerTestCase {
 
                 // assert
                 verify(courseRepository, times(1)).findById(eq(1L));
-                verify(gitHubApp, times(1)).org(eq("ucsb-cs156-f23"));
+                verify(fakeApp, times(1)).getInstallationByOrganization(eq("ucsb-cs156-f23"));
 
                 verify(fakeCourse, times(1)).setGithubAppInstallationId(eq(0L));
                 verify(courseRepository, times(1)).save(eq(fakeCourse));
 
-                OrgStatus o = OrgStatus.builder().org("ucsb-cs156-f23").githubAppInstalled(false).name("")
+                OrgStatus o = OrgStatus.builder().org("ucsb-cs156-f23").githubAppInstalled(false).name("123")
                                 .exceptionThrown(true)
-                                .exceptionMessage("edu.ucsb.cs156.github.GitHubAppException: ucsb-cs156-f23").build();
+                                .exceptionMessage("java.io.IOException: Failed to get - DNE").build();
 
                 String expectedJson = mapper.writeValueAsString(o);
                 String responseString = response.getResponse().getContentAsString();
@@ -1237,26 +1274,53 @@ public class CoursesControllerTests extends ControllerTestCase {
         public void user_can_join_course_successfully() throws Exception {
                 User currentUser = currentUserService.getCurrentUser().getUser();
                 School school = School.builder().name("UCSB").abbrev("ucsb").build();
-                ArrayList<String> emails = new ArrayList<>(List.of("user@ucsb.edu"));
+                // ArrayList<String> emails = new ArrayList<>(List.of("user@ucsb.edu"));
                 Student student = Student.builder().courseId(course1.getId()).studentId("user").email("user@ucsb.edu")
                                 .githubId(currentUser.getGithubId()).build();
 
                 Student student1 = Student.builder().courseId(course1.getId()).studentId("user").email("user@ucsb.edu")
                                 .githubId(0).build();
 
-                GitHubApp stub = mock(GitHubApp.class);
-                GitHubAppOrg s = mock(GitHubAppOrg.class);
-
                 when(courseRepository.findById(eq(course1.getId()))).thenReturn(Optional.of(course1));
                 when(schoolRepository.findByName(eq("UCSB"))).thenReturn(Optional.of(school));
-                when(gitHubApp.org(anyString())).thenReturn(s);
-                when(studentRepository.findByCourseIdAndEmail(eq(course1.getId()), eq("user@ucsb.edu")))
+
+                when(studentRepository.findByCourseIdAndEmail(eq(course1.getId()),
+                                eq("user@ucsb.edu")))
                                 .thenReturn(Optional.of(student1));
                 when(studentRepository.save(any())).thenReturn(student);
-                when(accessToken.getToken()).thenReturn("fake-token");
+                when(oauthToken.getToken()).thenReturn("fake-token");
 
-                when(gitHubApp.org(anyString())).thenReturn(s);
-                doReturn(emails).when(gitHubUserApi).userEmails();
+                // Build for user
+                GHEmail fakeemail = mock(GHEmail.class);
+                when(fakeemail.getEmail()).thenReturn("user@ucsb.edu");
+                List<GHEmail> emails = new ArrayList<GHEmail>(List.of(fakeemail));
+
+                GitHub fakeUser = mock(GitHub.class);
+                GHMyself fakeMyself = mock(GHMyself.class);
+                when(gitHubBuilderFactory.buildOauth(any())).thenReturn(fakeUser);
+                when(fakeUser.getMyself()).thenReturn(fakeMyself);
+                when(fakeMyself.getEmails2()).thenReturn(emails);
+
+                // Build for normal app
+                GitHub fake = mock(GitHub.class);
+                GHApp fakeApp = mock(GHApp.class);
+                GHAppInstallation fakeInst = mock(GHAppInstallation.class);
+                GHAppCreateTokenBuilder fakeTokenBuilder = mock(GHAppCreateTokenBuilder.class);
+                GHAppInstallationToken fakeInstToken = mock(GHAppInstallationToken.class);
+                when(gitHubBuilderFactory.build(any(JwtProvider.class))).thenReturn(fake);
+                when(fake.getApp()).thenReturn(fakeApp);
+                when(fakeApp.getInstallationByOrganization(any())).thenReturn(fakeInst);
+                when(fakeInst.createToken()).thenReturn(fakeTokenBuilder);
+                when(fakeTokenBuilder.create()).thenReturn(fakeInstToken);
+                when(fakeInstToken.getToken()).thenReturn("OHHHHH FAKE TOKEN");
+                when(fakeApp.getSlug()).thenReturn("123");
+
+                // Build with token
+                GitHub fakeWithInstToken = mock(GitHub.class);
+                GHOrganization fakeOrg = mock(GHOrganization.class);
+                when(gitHubBuilderFactory.build(anyString())).thenReturn(fakeWithInstToken);
+                when(fakeWithInstToken.getOrganization(anyString())).thenReturn(fakeOrg);
+                doNothing().when(fakeOrg).add(fakeMyself, GHOrganization.Role.MEMBER);
 
                 MvcResult response = mockMvc.perform(post("/api/courses/join?courseId=1")
                                 .with(csrf()))
@@ -1277,26 +1341,51 @@ public class CoursesControllerTests extends ControllerTestCase {
         public void user_can_join_course_successfully_with_null_id() throws Exception {
                 User currentUser = currentUserService.getCurrentUser().getUser();
                 School school = School.builder().name("UCSB").abbrev("ucsb").build();
-                ArrayList<String> emails = new ArrayList<>(List.of("user@ucsb.edu"));
+                // ArrayList<String> emails = new ArrayList<>(List.of("user@ucsb.edu"));
                 Student student = Student.builder().courseId(course1.getId()).studentId("user").email("user@ucsb.edu")
                                 .githubId(currentUser.getGithubId()).build();
 
                 Student student1 = Student.builder().courseId(course1.getId()).studentId("user").email("user@ucsb.edu")
                                 .githubId(null).build();
 
-                GitHubApp stub = mock(GitHubApp.class);
-                GitHubAppOrg s = mock(GitHubAppOrg.class);
-
                 when(courseRepository.findById(eq(course1.getId()))).thenReturn(Optional.of(course1));
                 when(schoolRepository.findByName(eq("UCSB"))).thenReturn(Optional.of(school));
-                when(gitHubApp.org(anyString())).thenReturn(s);
-                when(studentRepository.findByCourseIdAndEmail(eq(course1.getId()), eq("user@ucsb.edu")))
+                when(studentRepository.findByCourseIdAndEmail(eq(course1.getId()),
+                                eq("user@ucsb.edu")))
                                 .thenReturn(Optional.of(student1));
                 when(studentRepository.save(any())).thenReturn(student);
-                when(accessToken.getToken()).thenReturn("fake-token");
 
-                when(gitHubApp.org(anyString())).thenReturn(s);
-                doReturn(emails).when(gitHubUserApi).userEmails();
+                // Build for user
+                GHEmail fakeemail = mock(GHEmail.class);
+                when(fakeemail.getEmail()).thenReturn("user@ucsb.edu");
+                List<GHEmail> emails = new ArrayList<GHEmail>(List.of(fakeemail));
+
+                GitHub fakeUser = mock(GitHub.class);
+                GHMyself fakeMyself = mock(GHMyself.class);
+                when(gitHubBuilderFactory.buildOauth(any())).thenReturn(fakeUser);
+                when(fakeUser.getMyself()).thenReturn(fakeMyself);
+                when(fakeMyself.getEmails2()).thenReturn(emails);
+
+                // Build for normal app
+                GitHub fake = mock(GitHub.class);
+                GHApp fakeApp = mock(GHApp.class);
+                GHAppInstallation fakeInst = mock(GHAppInstallation.class);
+                GHAppCreateTokenBuilder fakeTokenBuilder = mock(GHAppCreateTokenBuilder.class);
+                GHAppInstallationToken fakeInstToken = mock(GHAppInstallationToken.class);
+                when(gitHubBuilderFactory.build(any(JwtProvider.class))).thenReturn(fake);
+                when(fake.getApp()).thenReturn(fakeApp);
+                when(fakeApp.getInstallationByOrganization(any())).thenReturn(fakeInst);
+                when(fakeInst.createToken()).thenReturn(fakeTokenBuilder);
+                when(fakeTokenBuilder.create()).thenReturn(fakeInstToken);
+                when(fakeInstToken.getToken()).thenReturn("OHHHHH FAKE TOKEN");
+                when(fakeApp.getSlug()).thenReturn("123");
+
+                // Build with token
+                GitHub fakeWithInstToken = mock(GitHub.class);
+                GHOrganization fakeOrg = mock(GHOrganization.class);
+                when(gitHubBuilderFactory.build(anyString())).thenReturn(fakeWithInstToken);
+                when(fakeWithInstToken.getOrganization(anyString())).thenReturn(fakeOrg);
+                doNothing().when(fakeOrg).add(fakeMyself, GHOrganization.Role.MEMBER);
 
                 MvcResult response = mockMvc.perform(post("/api/courses/join?courseId=1")
                                 .with(csrf()))
@@ -1315,26 +1404,50 @@ public class CoursesControllerTests extends ControllerTestCase {
         public void user_not_on_roster_can_not_join() throws Exception {
                 User currentUser = currentUserService.getCurrentUser().getUser();
                 School school = School.builder().name("UCSB").abbrev("ucsb").build();
-                ArrayList<String> emails = new ArrayList<>(List.of("user@ucsb.edu"));
                 Student student = Student.builder().courseId(course1.getId()).studentId("user").email("user@ucsb.edu")
                                 .githubId(currentUser.getGithubId()).build();
 
                 Student student1 = Student.builder().courseId(course1.getId()).studentId("user").email("user@ucsb.edu")
                                 .githubId(null).build();
 
-                GitHubApp stub = mock(GitHubApp.class);
-                GitHubAppOrg s = mock(GitHubAppOrg.class);
-
                 when(courseRepository.findById(eq(course1.getId()))).thenReturn(Optional.of(course1));
                 when(schoolRepository.findByName(eq("UCSB"))).thenReturn(Optional.of(school));
-                when(gitHubApp.org(anyString())).thenReturn(s);
-                when(studentRepository.findByCourseIdAndEmail(eq(course1.getId()), eq("user@ucsb.edu")))
+                when(studentRepository.findByCourseIdAndEmail(eq(course1.getId()),
+                                eq("user@ucsb.edu")))
                                 .thenReturn(Optional.empty());
                 when(studentRepository.save(any())).thenReturn(student);
-                when(accessToken.getToken()).thenReturn("fake-token");
 
-                when(gitHubApp.org(anyString())).thenReturn(s);
-                doReturn(emails).when(gitHubUserApi).userEmails();
+                // Build for user
+                GHEmail fakeemail = mock(GHEmail.class);
+                when(fakeemail.getEmail()).thenReturn("user@ucsb.edu");
+                List<GHEmail> emails = new ArrayList<GHEmail>(List.of(fakeemail));
+
+                GitHub fakeUser = mock(GitHub.class);
+                GHMyself fakeMyself = mock(GHMyself.class);
+                when(gitHubBuilderFactory.buildOauth(any())).thenReturn(fakeUser);
+                when(fakeUser.getMyself()).thenReturn(fakeMyself);
+                when(fakeMyself.getEmails2()).thenReturn(emails);
+
+                // Build for normal app
+                GitHub fake = mock(GitHub.class);
+                GHApp fakeApp = mock(GHApp.class);
+                GHAppInstallation fakeInst = mock(GHAppInstallation.class);
+                GHAppCreateTokenBuilder fakeTokenBuilder = mock(GHAppCreateTokenBuilder.class);
+                GHAppInstallationToken fakeInstToken = mock(GHAppInstallationToken.class);
+                when(gitHubBuilderFactory.build(any(JwtProvider.class))).thenReturn(fake);
+                when(fake.getApp()).thenReturn(fakeApp);
+                when(fakeApp.getInstallationByOrganization(any())).thenReturn(fakeInst);
+                when(fakeInst.createToken()).thenReturn(fakeTokenBuilder);
+                when(fakeTokenBuilder.create()).thenReturn(fakeInstToken);
+                when(fakeInstToken.getToken()).thenReturn("OHHHHH FAKE TOKEN");
+                when(fakeApp.getSlug()).thenReturn("123");
+
+                // Build with token
+                GitHub fakeWithInstToken = mock(GitHub.class);
+                GHOrganization fakeOrg = mock(GHOrganization.class);
+                when(gitHubBuilderFactory.build(anyString())).thenReturn(fakeWithInstToken);
+                when(fakeWithInstToken.getOrganization(anyString())).thenReturn(fakeOrg);
+                doNothing().when(fakeOrg).add(fakeMyself, GHOrganization.Role.MEMBER);
 
                 MvcResult response = mockMvc.perform(post("/api/courses/join?courseId=1")
                                 .with(csrf()))
@@ -1354,23 +1467,48 @@ public class CoursesControllerTests extends ControllerTestCase {
         public void user_can_not_join_course_wo_school_email() throws Exception {
                 User currentUser = currentUserService.getCurrentUser().getUser();
                 School school = School.builder().name("UCSB").abbrev("ucsb").build();
-                ArrayList<String> emails = new ArrayList<>(List.of("user@example.com"));
+                // ArrayList<String> emails = new ArrayList<>(List.of("user@example.com"));
                 Student student = Student.builder().courseId(course1.getId()).studentId("user").email("user@ucsb.edu")
                                 .githubId(currentUser.getGithubId()).build();
 
-                GitHubApp stub = mock(GitHubApp.class);
-                GitHubAppOrg s = mock(GitHubAppOrg.class);
-
                 when(courseRepository.findById(eq(course1.getId()))).thenReturn(Optional.of(course1));
                 when(schoolRepository.findByName(eq("UCSB"))).thenReturn(Optional.of(school));
-                when(gitHubApp.org(anyString())).thenReturn(s);
-                when(studentRepository.findByCourseIdAndStudentId(eq(course1.getId()), eq("user")))
+                when(studentRepository.findByCourseIdAndStudentId(eq(course1.getId()),
+                                eq("user")))
                                 .thenReturn(Optional.empty());
                 when(studentRepository.save(any())).thenReturn(student);
-                when(accessToken.getToken()).thenReturn("fake-token");
 
-                when(gitHubApp.org(anyString())).thenReturn(s);
-                doReturn(emails).when(gitHubUserApi).userEmails();
+                // Build for user
+                GHEmail fakeemail = mock(GHEmail.class);
+                when(fakeemail.getEmail()).thenReturn("user@example.edu");
+                List<GHEmail> emails = new ArrayList<GHEmail>(List.of(fakeemail));
+
+                GitHub fakeUser = mock(GitHub.class);
+                GHMyself fakeMyself = mock(GHMyself.class);
+                when(gitHubBuilderFactory.buildOauth(any())).thenReturn(fakeUser);
+                when(fakeUser.getMyself()).thenReturn(fakeMyself);
+                when(fakeMyself.getEmails2()).thenReturn(emails);
+
+                // Build for normal app
+                GitHub fake = mock(GitHub.class);
+                GHApp fakeApp = mock(GHApp.class);
+                GHAppInstallation fakeInst = mock(GHAppInstallation.class);
+                GHAppCreateTokenBuilder fakeTokenBuilder = mock(GHAppCreateTokenBuilder.class);
+                GHAppInstallationToken fakeInstToken = mock(GHAppInstallationToken.class);
+                when(gitHubBuilderFactory.build(any(JwtProvider.class))).thenReturn(fake);
+                when(fake.getApp()).thenReturn(fakeApp);
+                when(fakeApp.getInstallationByOrganization(any())).thenReturn(fakeInst);
+                when(fakeInst.createToken()).thenReturn(fakeTokenBuilder);
+                when(fakeTokenBuilder.create()).thenReturn(fakeInstToken);
+                when(fakeInstToken.getToken()).thenReturn("OHHHHH FAKE TOKEN");
+                when(fakeApp.getSlug()).thenReturn("123");
+
+                // Build with token
+                GitHub fakeWithInstToken = mock(GitHub.class);
+                GHOrganization fakeOrg = mock(GHOrganization.class);
+                when(gitHubBuilderFactory.build(anyString())).thenReturn(fakeWithInstToken);
+                when(fakeWithInstToken.getOrganization(anyString())).thenReturn(fakeOrg);
+                doNothing().when(fakeOrg).add(fakeMyself, GHOrganization.Role.MEMBER);
 
                 MvcResult response = mockMvc.perform(post("/api/courses/join?courseId=1")
                                 .with(csrf()))
@@ -1390,23 +1528,47 @@ public class CoursesControllerTests extends ControllerTestCase {
         public void user_can_not_join_course_if_already_there() throws Exception {
                 User currentUser = currentUserService.getCurrentUser().getUser();
                 School school = School.builder().name("UCSB").abbrev("ucsb").build();
-                ArrayList<String> emails = new ArrayList<>(List.of("user@ucsb.edu"));
                 Student student = Student.builder().courseId(course1.getId()).studentId("user").email("user@ucsb.edu")
                                 .githubId(currentUser.getGithubId()).build();
 
-                GitHubApp stub = mock(GitHubApp.class);
-                GitHubAppOrg s = mock(GitHubAppOrg.class);
-
                 when(courseRepository.findById(eq(course1.getId()))).thenReturn(Optional.of(course1));
                 when(schoolRepository.findByName(eq("UCSB"))).thenReturn(Optional.of(school));
-                when(gitHubApp.org(anyString())).thenReturn(s);
-                when(studentRepository.findByCourseIdAndEmail(eq(course1.getId()), eq("user@ucsb.edu")))
+                when(studentRepository.findByCourseIdAndEmail(eq(course1.getId()),
+                                eq("user@ucsb.edu")))
                                 .thenReturn(Optional.of(student));
                 when(studentRepository.save(any())).thenReturn(student);
-                when(accessToken.getToken()).thenReturn("fake-token");
 
-                when(gitHubApp.org(anyString())).thenReturn(s);
-                doReturn(emails).when(gitHubUserApi).userEmails();
+                // Build for user
+                GHEmail fakeemail = mock(GHEmail.class);
+                when(fakeemail.getEmail()).thenReturn("user@ucsb.edu");
+                List<GHEmail> emails = new ArrayList<GHEmail>(List.of(fakeemail));
+
+                GitHub fakeUser = mock(GitHub.class);
+                GHMyself fakeMyself = mock(GHMyself.class);
+                when(gitHubBuilderFactory.buildOauth(any())).thenReturn(fakeUser);
+                when(fakeUser.getMyself()).thenReturn(fakeMyself);
+                when(fakeMyself.getEmails2()).thenReturn(emails);
+
+                // Build for normal app
+                GitHub fake = mock(GitHub.class);
+                GHApp fakeApp = mock(GHApp.class);
+                GHAppInstallation fakeInst = mock(GHAppInstallation.class);
+                GHAppCreateTokenBuilder fakeTokenBuilder = mock(GHAppCreateTokenBuilder.class);
+                GHAppInstallationToken fakeInstToken = mock(GHAppInstallationToken.class);
+                when(gitHubBuilderFactory.build(any(JwtProvider.class))).thenReturn(fake);
+                when(fake.getApp()).thenReturn(fakeApp);
+                when(fakeApp.getInstallationByOrganization(any())).thenReturn(fakeInst);
+                when(fakeInst.createToken()).thenReturn(fakeTokenBuilder);
+                when(fakeTokenBuilder.create()).thenReturn(fakeInstToken);
+                when(fakeInstToken.getToken()).thenReturn("OHHHHH FAKE TOKEN");
+                when(fakeApp.getSlug()).thenReturn("123");
+
+                // Build with token
+                GitHub fakeWithInstToken = mock(GitHub.class);
+                GHOrganization fakeOrg = mock(GHOrganization.class);
+                when(gitHubBuilderFactory.build(anyString())).thenReturn(fakeWithInstToken);
+                when(fakeWithInstToken.getOrganization(anyString())).thenReturn(fakeOrg);
+                doNothing().when(fakeOrg).add(fakeMyself, GHOrganization.Role.MEMBER);
 
                 MvcResult response = mockMvc.perform(post("/api/courses/join?courseId=1")
                                 .with(csrf()))
@@ -1426,25 +1588,47 @@ public class CoursesControllerTests extends ControllerTestCase {
         public void user_can_not_join_due_to_github_error() throws Exception {
                 User currentUser = currentUserService.getCurrentUser().getUser();
                 School school = School.builder().name("UCSB").abbrev("ucsb").build();
-                ArrayList<String> emails = new ArrayList<>(List.of("user@ucsb.edu"));
                 Student student = Student.builder().courseId(course1.getId()).studentId("user").email("user@ucsb.edu")
                                 .githubId(0).build();
 
-                GitHubApp stub = mock(GitHubApp.class);
-                GitHubAppOrg s = mock(GitHubAppOrg.class);
-
                 when(courseRepository.findById(eq(course1.getId()))).thenReturn(Optional.of(course1));
                 when(schoolRepository.findByName(eq("UCSB"))).thenReturn(Optional.of(school));
-                when(gitHubApp.org(anyString())).thenReturn(s);
-                when(studentRepository.findByCourseIdAndEmail(eq(course1.getId()), eq("user@ucsb.edu")))
+                when(studentRepository.findByCourseIdAndEmail(eq(course1.getId()),
+                                eq("user@ucsb.edu")))
                                 .thenReturn(Optional.of(student));
                 when(studentRepository.save(any())).thenReturn(student);
-                when(accessToken.getToken()).thenReturn("fake-token");
 
-                when(s.inviteUserToThisOrg(any())).thenThrow(new GitHubAppException("error"));
+                // Build for user
+                GHEmail fakeemail = mock(GHEmail.class);
+                when(fakeemail.getEmail()).thenReturn("user@ucsb.edu");
+                List<GHEmail> emails = new ArrayList<GHEmail>(List.of(fakeemail));
 
-                when(gitHubApp.org(anyString())).thenReturn(s);
-                doReturn(emails).when(gitHubUserApi).userEmails();
+                GitHub fakeUser = mock(GitHub.class);
+                GHMyself fakeMyself = mock(GHMyself.class);
+                when(gitHubBuilderFactory.buildOauth(any())).thenReturn(fakeUser);
+                when(fakeUser.getMyself()).thenReturn(fakeMyself);
+                when(fakeMyself.getEmails2()).thenReturn(emails);
+
+                // Build for normal app
+                GitHub fake = mock(GitHub.class);
+                GHApp fakeApp = mock(GHApp.class);
+                GHAppInstallation fakeInst = mock(GHAppInstallation.class);
+                GHAppCreateTokenBuilder fakeTokenBuilder = mock(GHAppCreateTokenBuilder.class);
+                GHAppInstallationToken fakeInstToken = mock(GHAppInstallationToken.class);
+                when(gitHubBuilderFactory.build(any(JwtProvider.class))).thenReturn(fake);
+                when(fake.getApp()).thenReturn(fakeApp);
+                when(fakeApp.getInstallationByOrganization(any())).thenReturn(fakeInst);
+                when(fakeInst.createToken()).thenReturn(fakeTokenBuilder);
+                when(fakeTokenBuilder.create()).thenReturn(fakeInstToken);
+                when(fakeInstToken.getToken()).thenReturn("OHHHHH FAKE TOKEN");
+                when(fakeApp.getSlug()).thenReturn("123");
+
+                // Build with token
+                GitHub fakeWithInstToken = mock(GitHub.class);
+                GHOrganization fakeOrg = mock(GHOrganization.class);
+                when(gitHubBuilderFactory.build(anyString())).thenReturn(fakeWithInstToken);
+                when(fakeWithInstToken.getOrganization(anyString())).thenReturn(fakeOrg);
+                doThrow(new IOException("GITHUB ERROR")).when(fakeOrg).add(fakeMyself, GHOrganization.Role.MEMBER);
 
                 MvcResult response = mockMvc.perform(post("/api/courses/join?courseId=1")
                                 .with(csrf()))
@@ -1462,6 +1646,67 @@ public class CoursesControllerTests extends ControllerTestCase {
 
         @WithMockUser(roles = { "USER" })
         @Test
+        public void user_can_not_join_due_to_github_email_error() throws Exception {
+                User currentUser = currentUserService.getCurrentUser().getUser();
+                School school = School.builder().name("UCSB").abbrev("ucsb").build();
+                Student student = Student.builder().courseId(course1.getId()).studentId("user").email("user@ucsb.edu")
+                                .githubId(0).build();
+
+                when(courseRepository.findById(eq(course1.getId()))).thenReturn(Optional.of(course1));
+                when(schoolRepository.findByName(eq("UCSB"))).thenReturn(Optional.of(school));
+                when(studentRepository.findByCourseIdAndEmail(eq(course1.getId()),
+                                eq("user@ucsb.edu")))
+                                .thenReturn(Optional.of(student));
+                when(studentRepository.save(any())).thenReturn(student);
+
+                // Build for user
+                GHEmail fakeemail = mock(GHEmail.class);
+                when(fakeemail.getEmail()).thenReturn("user@ucsb.edu");
+                List<GHEmail> emails = new ArrayList<GHEmail>(List.of(fakeemail));
+
+                GitHub fakeUser = mock(GitHub.class);
+                GHMyself fakeMyself = mock(GHMyself.class);
+                when(gitHubBuilderFactory.buildOauth(any())).thenReturn(fakeUser);
+                when(fakeUser.getMyself()).thenReturn(fakeMyself);
+                when(fakeMyself.getEmails2()).thenThrow(new IOException("Failed to fetch email"));
+
+                // Build for normal app
+                GitHub fake = mock(GitHub.class);
+                GHApp fakeApp = mock(GHApp.class);
+                GHAppInstallation fakeInst = mock(GHAppInstallation.class);
+                GHAppCreateTokenBuilder fakeTokenBuilder = mock(GHAppCreateTokenBuilder.class);
+                GHAppInstallationToken fakeInstToken = mock(GHAppInstallationToken.class);
+                when(gitHubBuilderFactory.build(any(JwtProvider.class))).thenReturn(fake);
+                when(fake.getApp()).thenReturn(fakeApp);
+                when(fakeApp.getInstallationByOrganization(any())).thenReturn(fakeInst);
+                when(fakeInst.createToken()).thenReturn(fakeTokenBuilder);
+                when(fakeTokenBuilder.create()).thenReturn(fakeInstToken);
+                when(fakeInstToken.getToken()).thenReturn("OHHHHH FAKE TOKEN");
+                when(fakeApp.getSlug()).thenReturn("123");
+
+                // Build with token
+                GitHub fakeWithInstToken = mock(GitHub.class);
+                GHOrganization fakeOrg = mock(GHOrganization.class);
+                when(gitHubBuilderFactory.build(anyString())).thenReturn(fakeWithInstToken);
+                when(fakeWithInstToken.getOrganization(anyString())).thenReturn(fakeOrg);
+                doNothing().when(fakeOrg).add(fakeMyself, GHOrganization.Role.MEMBER);
+
+                MvcResult response = mockMvc.perform(post("/api/courses/join?courseId=1")
+                                .with(csrf()))
+                                .andExpect(status().isForbidden()).andReturn();
+
+                verify(courseRepository, times(1)).findById(eq(1L));
+                Map<String, String> responseMap = mapper.readValue(response.getResponse().getContentAsString(),
+                                new TypeReference<Map<String, String>>() {
+                                });
+                Map<String, String> expectedMap = Map.of("message",
+                                "Failed to get user email.", "type",
+                                "AccessDeniedException");
+                assertEquals(expectedMap, responseMap);
+        }
+
+        @WithMockUser(roles = { "USER" })
+        @Test
         public void user_can_not_join_if_course_dne() throws Exception {
                 User currentUser = currentUserService.getCurrentUser().getUser();
                 School school = School.builder().name("UCSB").abbrev("ucsb").build();
@@ -1469,19 +1714,12 @@ public class CoursesControllerTests extends ControllerTestCase {
                 Student student = Student.builder().courseId(course1.getId()).studentId("user").email("user@ucsb.edu")
                                 .githubId(currentUser.getGithubId()).build();
 
-                GitHubApp stub = mock(GitHubApp.class);
-                GitHubAppOrg s = mock(GitHubAppOrg.class);
-
                 when(courseRepository.findById(eq(course1.getId()))).thenReturn(Optional.empty());
                 when(schoolRepository.findByName(eq("UCSB"))).thenReturn(Optional.of(school));
-                when(gitHubApp.org(anyString())).thenReturn(s);
-                when(studentRepository.findByCourseIdAndEmail(eq(course1.getId()), eq("user@ucsb.edu")))
+                when(studentRepository.findByCourseIdAndEmail(eq(course1.getId()),
+                                eq("user@ucsb.edu")))
                                 .thenReturn(Optional.empty());
                 when(studentRepository.save(any())).thenReturn(student);
-                when(accessToken.getToken()).thenReturn("fake-token");
-
-                when(gitHubApp.org(anyString())).thenReturn(s);
-                doReturn(emails).when(gitHubUserApi).userEmails();
 
                 MvcResult response = mockMvc.perform(post("/api/courses/join?courseId=1")
                                 .with(csrf()))
@@ -1505,19 +1743,12 @@ public class CoursesControllerTests extends ControllerTestCase {
                 Student student = Student.builder().courseId(course1.getId()).studentId("user").email("user@ucsb.edu")
                                 .githubId(currentUser.getGithubId()).build();
 
-                GitHubApp stub = mock(GitHubApp.class);
-                GitHubAppOrg s = mock(GitHubAppOrg.class);
-
                 when(courseRepository.findById(eq(course1.getId()))).thenReturn(Optional.of(course1));
                 when(schoolRepository.findByName(eq("UCSB"))).thenReturn(Optional.empty());
-                when(gitHubApp.org(anyString())).thenReturn(s);
-                when(studentRepository.findByCourseIdAndStudentId(eq(course1.getId()), eq("user")))
+                when(studentRepository.findByCourseIdAndStudentId(eq(course1.getId()),
+                                eq("user")))
                                 .thenReturn(Optional.empty());
                 when(studentRepository.save(any())).thenReturn(student);
-                when(accessToken.getToken()).thenReturn("fake-token");
-
-                when(gitHubApp.org(anyString())).thenReturn(s);
-                doReturn(emails).when(gitHubUserApi).userEmails();
 
                 MvcResult response = mockMvc.perform(post("/api/courses/join?courseId=1")
                                 .with(csrf()))

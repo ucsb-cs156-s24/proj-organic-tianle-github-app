@@ -38,12 +38,6 @@ public class GithubWebhookController {
     UserRepository userRepository;
     @Autowired
     StudentRepository studentRepository;
-    @Autowired
-    GitHubApp gitHubApp;
-    @Autowired
-    GitHubToken accessToken;
-    @Autowired
-    GitHubUserApi gitHubUserApi;
     @Value("${edu.ucsb.cs156.github.webhookSecret}")
     String webhookSecret;
 

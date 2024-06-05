@@ -57,39 +57,4 @@ public class Utils {
         // Builds the JWT and serializes it to a compact, URL-safe string
         return builder.compact();
     }
-
-    static public HttpResponse<String> post(String url, String body, String accessToken, HttpClient client)
-            throws GitHubAppException {
-        try {
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(new URI("https://api.github.com" + url))
-                    .timeout(Duration.of(10L, ChronoUnit.SECONDS)) // Change 10 to 10L
-                    .header("Authorization", "Bearer " + accessToken)
-                    .header("Accept", "application/vnd.github.v3+json")
-                    .header("X-GitHub-Api-Version", "2022-11-28")
-                    .header("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(body))
-                    .build();
-            return client.send(request, HttpResponse.BodyHandlers.ofString());
-        } catch (Exception e) {
-            throw new GitHubAppException(e.getMessage());
-        }
-    }
-
-    static public HttpResponse<String> get(String url, String accessToken, HttpClient client)
-            throws GitHubAppException {
-        try {
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(new URI("https://api.github.com" + url))
-                    .timeout(Duration.of(10L, ChronoUnit.SECONDS)) // Change 10 to 10L
-                    .header("Authorization", "Bearer " + accessToken)
-                    .header("Accept", "application/vnd.github.v3+json")
-                    .header("X-GitHub-Api-Version", "2022-11-28")
-                    .GET()
-                    .build();
-            return client.send(request, HttpResponse.BodyHandlers.ofString());
-        } catch (Exception e) {
-            throw new GitHubAppException(e.getMessage());
-        }
-    }
 }
