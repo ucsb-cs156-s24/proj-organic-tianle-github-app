@@ -9,6 +9,7 @@ import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.web.context.annotation.RequestScope;
 
+import edu.ucsb.cs156.github.OauthToken;
 import lombok.extern.slf4j.Slf4j;
 
 @Configuration
@@ -18,7 +19,7 @@ public class OAuth2ClientBean {
 
     @Bean
     @RequestScope
-    public String accessToken(OAuth2AuthorizedClientService clientService) {
+    public OauthToken accessToken(OAuth2AuthorizedClientService clientService) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String accessToken = null;
         if (authentication.getClass().isAssignableFrom(OAuth2AuthenticationToken.class)) {
@@ -34,6 +35,6 @@ public class OAuth2ClientBean {
                 log.error(accessToken);
             }
         }
-        return (accessToken);
+        return new OauthToken(accessToken);
     }
 }
