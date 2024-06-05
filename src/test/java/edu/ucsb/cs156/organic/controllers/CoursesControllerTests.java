@@ -291,6 +291,7 @@ public class CoursesControllerTests extends ControllerTestCase {
                                 .startDate(LocalDateTime.parse("2023-09-01T00:00:00"))
                                 .endDate(LocalDateTime.parse("2023-12-31T00:00:00"))
                                 .githubOrg("ucsb-cs16-f23")
+                                .githubAppInstallationId(0)
                                 .build();
 
                 Course courseAfter = Course.builder()
@@ -301,6 +302,7 @@ public class CoursesControllerTests extends ControllerTestCase {
                                 .startDate(LocalDateTime.parse("2023-09-01T00:00:00"))
                                 .endDate(LocalDateTime.parse("2023-12-31T00:00:00"))
                                 .githubOrg("ucsb-cs16-f23")
+                                .githubAppInstallationId(0)
                                 .build();
 
                 when(courseRepository.save(eq(courseBefore))).thenReturn(courseAfter);
@@ -673,6 +675,7 @@ public class CoursesControllerTests extends ControllerTestCase {
 
                 Course courseAfter = course2;
                 courseAfter.setSchool("UCSD");
+                courseAfter.setGithubAppInstallationId(0);
 
                 when(courseRepository.findById(eq(courseBefore.getId()))).thenReturn(Optional.of(courseBefore));
                 when(courseRepository.save(eq(courseAfter))).thenReturn(courseAfter);
