@@ -41,6 +41,8 @@ import edu.ucsb.cs156.github.JwtProvider;
 
 import org.kohsuke.github.GHApp;
 import org.kohsuke.github.GHAppInstallation;
+import org.kohsuke.github.GHEmail;
+import org.kohsuke.github.GHMyself;
 import org.kohsuke.github.GHOrganization;
 import org.kohsuke.github.GHUser;
 import org.kohsuke.github.GitHub;
@@ -50,6 +52,7 @@ import java.time.LocalDateTime;
 import javax.validation.Valid;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -414,15 +417,22 @@ public class CoursesController extends ApiController {
         }
 
         String emailSufix = s.getAbbrev() + ".edu";
-
-            GHUser currUser = GitHub.connectUsingOAuth(jwtProvider.getJwt()).getUser(u.getGithubLogin());
+        GHMyself currUser;
+        List<GHEmail> emails;
+        try {
+            currUser = (GHMyself) GitHub.connectUsingOAuth(jwtProvider.getJwt()).getUser(u.getGithubLogin());
+            emails = currUser.getEmails2();
+        } catch (Exception e) {
+            log.error(e.toString());
+            throw new AccessDeniedException("Failed to get user email.");
+        }
 
         boolean found = false;
         String schoolEmail = "";
-        for (String email : emails) {
-            if (email.endsWith(emailSufix)) {
+        for (GHEmail email : emails) {
+            if (email.getEmail().endsWith(emailSufix)) {
                 found = true;
-                schoolEmail = email;
+                schoolEmail = email.getEmail();
                 break;
             }
         }
@@ -446,18 +456,9 @@ public class CoursesController extends ApiController {
         try {
             GHAppInstallation inst = GitHub.connectUsingOAuth(jwtProvider.getJwt()).getApp()
                     .getInstallationByOrganization(targetCourse.getGithubOrg());
-            GHOrganization org = GitHub.connectUsingOAuth(jwtProvider.getJwt()).getOrganization(targetCourse.getGithubOrg());
-            org.add()
-        } catch (Exception e) {
-            log.error("EXCEPTION: ", e);
-            course.setGithubAppInstallationId(0);
-            courseRepository.save(course);
-            return course;
-        }
-        try {
-            GitHubAppOrg org = gitHubApp.org(targetCourse.getGithubOrg());
-            String res = org.inviteUserToThisOrg(u.getGithubId());
-            log.info("\u001B[33m" + res + "\u001B[0m");
+            GHOrganization org = GitHub.connectUsingOAuth(jwtProvider.getJwt())
+                    .getOrganization(targetCourse.getGithubOrg());
+            org.add(currUser, GHOrganization.Role.MEMBER);
         } catch (Exception e) {
             log.error(e.toString());
             throw new AccessDeniedException("Failed to invite user to org. Is this user already in the org?");
