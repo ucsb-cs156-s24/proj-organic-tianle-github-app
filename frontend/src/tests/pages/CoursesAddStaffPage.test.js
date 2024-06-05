@@ -78,16 +78,16 @@ describe("CourseAddStaffPage tests", () => {
         );
 
         await waitFor(() => {
-            expect(screen.getByTestId("AddCourseStaffForm-githubId")).toBeInTheDocument();
+            expect(screen.getByTestId("AddCourseStaffForm-githubLogin")).toBeInTheDocument();
         });
 
         
-        const githubIdField = screen.getByTestId("AddCourseStaffForm-githubId");
+        const githubLoginField = screen.getByTestId("AddCourseStaffForm-githubLogin");
         const submitButton = screen.getByTestId("AddCourseStaffForm-submit");
         
 
         
-        fireEvent.change(githubIdField, { target: { value: 'pconrad' } });
+        fireEvent.change(githubLoginField, { target: { value: 'pconrad' } });
 
         expect(submitButton).toBeInTheDocument();
 
