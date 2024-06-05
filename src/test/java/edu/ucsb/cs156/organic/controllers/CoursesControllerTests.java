@@ -279,7 +279,7 @@ public class CoursesControllerTests extends ControllerTestCase {
                                 .build();
 
                 Course courseAfter = Course.builder()
-                                .id(222L)
+                                .id(0L)
                                 .name("CS16")
                                 .school("UCSB")
                                 .term("F23")
@@ -362,7 +362,7 @@ public class CoursesControllerTests extends ControllerTestCase {
                                 .build();
 
                 Course courseAfter = Course.builder()
-                                .id(222L)
+                                .id(0L)
                                 .name("CS16")
                                 .school("UCSB")
                                 .term("F23")
