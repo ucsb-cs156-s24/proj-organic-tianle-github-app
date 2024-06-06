@@ -114,7 +114,7 @@ public class SchoolController extends ApiController{
         @Parameter(name="name", description="University name") @RequestParam String name,
         @Parameter(name="termRegex", description="Format: Example [WSMF]\\d\\d") @RequestParam String termRegex,
         @Parameter(name="termDescription", description="Enter quarter, e.g. F23, W24, S24, M24") @RequestParam String termDescription,
-        @Parameter(name="termError", description="input error?") @RequestParam String termError)
+        @Parameter(name="termError", description="input error?") @RequestParam(required = false) String termError)
         {
 
         School school = School.builder().build();
