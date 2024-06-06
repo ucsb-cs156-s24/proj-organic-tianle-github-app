@@ -20,6 +20,7 @@ import CourseIndexPage from "main/pages/CourseIndexPage";
 
 import CoursesShowPage from "main/pages/CoursesShowPage";
 import CoursesStaffPage from "main/pages/CoursesStaffPage";
+import CoursesAddStaffPage from "main/pages/CoursesAddStaffPage";
 
 
 import { hasRole, useCurrentUser } from "main/utils/currentUser";
@@ -50,14 +51,14 @@ function App() {
       <Route path="/courses/create" element={<CoursesCreatePage />} />
       <Route path="/courses" element={<CourseIndexPage />} />
       <Route path="/courses/edit/:id" element={<CoursesEditPage />} />
+      <Route path = "/courses/:courseId/staff/addStaff" element={<CoursesAddStaffPage />}/>
       <Route path="/courses/:id" element={<CoursesShowPage />} />
-
     </>
   ) : null;
 
   const staffRoutes = (hasRole(currentUser, "ROLE_ADMIN") || hasRole(currentUser, "ROLE_INSTRUCTOR") || hasRole(currentUser, "Role_USER")) ? (
     <>
-      <Route path="/courses/:id/staff" element={<CoursesStaffPage />} />
+      <Route path="/courses/:courseId/staff" element={<CoursesStaffPage />} />
     </>
   ) : null;
 
