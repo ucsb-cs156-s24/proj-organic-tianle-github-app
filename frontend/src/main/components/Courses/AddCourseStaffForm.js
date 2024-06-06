@@ -42,31 +42,16 @@ function AddCourseStaffForm({ initialContents, submitAction, buttonLabel = "Crea
             <Row>
                 <Col>
                     <Form.Group className="mb-3" >
-                        <Form.Label htmlFor="courseId">courseId</Form.Label>
+                        <Form.Label htmlFor="githubLogin">Github Login</Form.Label>
                         <Form.Control
-                            data-testid="AddCourseStaffForm-courseId"
-                            id="courseId"
+                            data-testid="AddCourseStaffForm-githubLogin"
+                            id="githubLogin"
                             type="text"
-                            isInvalid={Boolean(errors.courseId)}
-                            {...register("courseId", { required: true })}
+                            isInvalid={Boolean(errors.githubLogin)}
+                            {...register("githubLogin", { required: true })}
                         />
                         <Form.Control.Feedback type="invalid">
-                            {errors.courseId && 'courseId is required.'}
-                        </Form.Control.Feedback>
-                    </Form.Group>
-                </Col>
-                <Col>
-                    <Form.Group className="mb-3" >
-                        <Form.Label htmlFor="githubId">Github Id</Form.Label>
-                        <Form.Control
-                            data-testid="AddCourseStaffForm-githubId"
-                            id="githubId"
-                            type="text"
-                            isInvalid={Boolean(errors.githubId)}
-                            {...register("githubId", { required: true })}
-                        />
-                        <Form.Control.Feedback type="invalid">
-                            {errors.githubId && 'githubId is required. '}
+                            {errors.githubLogin && 'githubLogin is required. '}
                         </Form.Control.Feedback>
                     </Form.Group>
                 </Col>
