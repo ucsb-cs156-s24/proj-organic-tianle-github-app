@@ -23,4 +23,4 @@ repo_name: "TBD"
 repo: ucsb-cs156-s24/proj-organic-tianle-github-app
 owner: ucsb-cs156-s24
 repo_name: proj-organic-tianle-github-app
-pull_requests: []
+pull_requests: [{"author":{"id":"MDQ6VXNlcjQzNzgzODc3","is_bot":false,"login":"yuxiaolejs","name":"Unics Yu"},"headRefName":"Tianle-GHA-com.tianleyu.github","number":3,"title":"Tianle gha com.tianleyu.GitHub","url":"https://github.com/ucsb-cs156-s24/proj-organic-tianle-github-app/pull/3"},{"author":{"id":"MDQ6VXNlcjExMTkwMTc=","is_bot":false,"login":"pconrad","name":"Phill Conrad"},"headRefName":"Tianle-deployScript","number":2,"title":"Tianle deploy script","url":"https://github.com/ucsb-cs156-s24/proj-organic-tianle-github-app/pull/2"}]
