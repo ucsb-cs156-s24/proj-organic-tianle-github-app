@@ -33,36 +33,36 @@ export default function CoursesTable({ courses, currentUser }) {
     // Stryker disable next-line all : TODO try to make a good test for this
     const deleteCallback = async (cell) => { deleteMutation.mutate(cell); }
 
-    const columns = [
-        {
-            Header: 'id',
-            accessor: 'id',
-        },
-        {
-            Header: 'Name',
-            accessor: 'name',
-        },
-        {
-            Header: 'School',
-            accessor: 'school',
-        },
-        {
-            Header: 'Term',
-            accessor: 'term',
-        },
-        {
-            Header: 'StartDate',
-            accessor: 'startDate',
-        },
-        {
-            Header: 'EndDate',
-            accessor: 'endDate',
-        },
-        {
-            Header: 'GitHub Org',
-            accessor: 'githubOrg',
-        },
-
+     const columns = [
+         {
+             Header: 'id',
+             accessor: 'id',
+             Cell: ({ value }) => <a data-testid={`linkToCoursesPage-${value}`} href={`/courses/${value}`}>{value}</a>,
+         },
+         {
+             Header: 'Name',
+             accessor: 'name',
+         },
+         {
+             Header: 'School',
+             accessor: 'school',
+         },
+         {
+             Header: 'Term',
+             accessor: 'term',
+         },
+         {
+             Header: 'StartDate',
+             accessor: 'startDate',
+         },
+         {
+             Header: 'EndDate',
+             accessor: 'endDate',
+         },
+         {
+             Header: 'GitHub Org',
+             accessor: 'githubOrg',
+         },
     ];
 
     if (hasRole(currentUser, "ROLE_ADMIN") || hasRole(currentUser, "ROLE_INSTRUCTOR")) {

@@ -297,4 +297,23 @@ describe("UserTable tests", () => {
     const totalCoursesElement = screen.getByText("Total Courses: 3"); // Assuming there are 3 courses in the fixture
     expect(totalCoursesElement).toBeInTheDocument();
   });
+
+  test("ID is a hyperlink", async () => {  
+
+    const currentUser = currentUserFixtures.adminUser;
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+            <CoursesTable courses={coursesFixtures.threeCourses} currentUser={currentUser} />
+        </MemoryRouter>
+      </QueryClientProvider>
+
+    );
+
+    const idLink = screen.getByTestId(`linkToCoursesPage-1`);
+    expect(idLink).toBeInTheDocument();
+    expect(idLink.getAttribute('href')).toBe('/courses/1');
+  });
+
 });
