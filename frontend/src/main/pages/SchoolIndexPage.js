@@ -10,6 +10,7 @@ export default function SchoolIndexPage() {
 
     const { data: currentUser } = useCurrentUser();
   
+
     const createButton = () => {  
       
         return (
@@ -43,4 +44,3 @@ export default function SchoolIndexPage() {
         </BasicLayout>
       )
   }
-  

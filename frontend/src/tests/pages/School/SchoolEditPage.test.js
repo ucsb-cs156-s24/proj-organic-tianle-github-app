@@ -79,14 +79,12 @@ describe("SchoolEditPage tests", () => {
                 name: "University of California, Santa Barbara",
                 termRegex: "regexTest",
                 termDescription: "descriptionTest",
-                termError: "errorTest",
             });
             axiosMock.onPut('/api/schools/update').reply(200, {
                 abbrev: "ucsb",
                 name: "University of California, Sha Bi",
                 termRegex: "regexTest2",
                 termDescription: "descText2",
-                termError: "errTest2",
             });
         });
 
@@ -117,14 +115,12 @@ describe("SchoolEditPage tests", () => {
             const abbrevField = screen.getByTestId("SchoolForm-abbrev");
             const termRegexField = screen.getByTestId("SchoolForm-termRegex");
             const termDescriptionField = screen.getByTestId("SchoolForm-termDescription");
-            const termErrorField = screen.getByTestId("SchoolForm-termError");
             const submitButton = screen.getByTestId("SchoolForm-submit");
 
             expect(nameField).toHaveValue("University of California, Santa Barbara");
             expect(abbrevField).toHaveValue("ucsb");
             expect(termRegexField).toHaveValue("regexTest");
             expect(termDescriptionField).toHaveValue("descriptionTest");
-            expect(termErrorField).toHaveValue("errorTest");
             expect(submitButton).toBeInTheDocument();
         });
 
@@ -144,20 +140,17 @@ describe("SchoolEditPage tests", () => {
             const abbrevField = screen.getByTestId("SchoolForm-abbrev");
             const termRegexField = screen.getByTestId("SchoolForm-termRegex");
             const termDescriptionField = screen.getByTestId("SchoolForm-termDescription");
-            const termErrorField = screen.getByTestId("SchoolForm-termError");
             const submitButton = screen.getByTestId("SchoolForm-submit");
 
             expect(nameField).toHaveValue("University of California, Santa Barbara");
             expect(abbrevField).toHaveValue("ucsb");
             expect(termRegexField).toHaveValue("regexTest");
             expect(termDescriptionField).toHaveValue("descriptionTest");
-            expect(termErrorField).toHaveValue("errorTest");
             expect(submitButton).toBeInTheDocument();
 
             fireEvent.change(nameField, { target: { value: "University of California, Sha Bi" } })
             fireEvent.change(termRegexField, { target: { value: "regexTest2" } })
             fireEvent.change(termDescriptionField, { target: { value: "descTest2" } })
-            fireEvent.change(termErrorField, { target: { value: "errTest2" } })
 
             fireEvent.click(submitButton);
 
@@ -167,7 +160,7 @@ describe("SchoolEditPage tests", () => {
 
             expect(axiosMock.history.put.length).toBe(1);
             expect(axiosMock.history.put[0].params).toEqual({ abbrev: "ucsb"});
-            expect(axiosMock.history.put[0].data).toEqual(JSON.stringify({ name: "University of California, Sha Bi", termRegex: "regexTest2", termDescription: "descTest2", termError: "errTest2"}));
+            expect(axiosMock.history.put[0].data).toEqual(JSON.stringify({ name: "University of California, Sha Bi", termRegex: "regexTest2", termDescription: "descTest2"}));
 
         });
 

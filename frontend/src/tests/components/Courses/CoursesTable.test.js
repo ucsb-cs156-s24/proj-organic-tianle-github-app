@@ -294,4 +294,22 @@ describe("UserTable tests", () => {
     expect(totalCoursesElement).toBeInTheDocument();
   });
 
+  test("ID is a hyperlink", async () => {  
+
+    const currentUser = currentUserFixtures.adminUser;
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+            <CoursesTable courses={coursesFixtures.threeCourses} currentUser={currentUser} />
+        </MemoryRouter>
+      </QueryClientProvider>
+
+    );
+
+    const idLink = screen.getByTestId(`linkToCoursesPage-1`);
+    expect(idLink).toBeInTheDocument();
+    expect(idLink.getAttribute('href')).toBe('/courses/1');
+  });
+
 });

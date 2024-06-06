@@ -1,4 +1,4 @@
-import { Button, Form, Row, Col } from 'react-bootstrap';
+import { Button, Form, Row, Col, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { useForm } from 'react-hook-form'
 import { useNavigate } from 'react-router-dom'
 
@@ -26,6 +26,11 @@ function SchoolForm({ initialContents, submitAction, buttonLabel = "Create" }) {
                 <Col>
                     <Form.Group className="mb-3" >
                         <Form.Label htmlFor="abbrev">Abbreviation</Form.Label>
+                        <OverlayTrigger
+                            placement="top"
+                            overlay={<Tooltip>Please enter an abbreviation for school name in lowercase. EX: ucsb</Tooltip>}
+                            delay='5'
+                        >
                         <Form.Control
                             data-testid="SchoolForm-abbrev"
                             id="abbrev"
@@ -33,6 +38,7 @@ function SchoolForm({ initialContents, submitAction, buttonLabel = "Create" }) {
                             isInvalid={Boolean(errors.abbrev)}
                             {...register("abbrev", { required: true, pattern: abbrev_regex })}
                         />
+                        </OverlayTrigger>
                         <Form.Control.Feedback type="invalid">
                             {errors.abbrev?.type === 'required' && 'Abbreviation is required. '}
                             {errors.abbrev?.type === 'pattern' && 'Abbreviation must be lowercase letters (_ and . allowed), e.g. ucsb'}
@@ -57,6 +63,11 @@ function SchoolForm({ initialContents, submitAction, buttonLabel = "Create" }) {
                 <Col>
                     <Form.Group className="mb-3" >
                         <Form.Label htmlFor="termRegex">Term Regex</Form.Label>
+                         <OverlayTrigger
+                            placement="top"
+                            overlay={<Tooltip>Please enter a regular expression for the format of terms (semesters or quarters) at the school. EX: [WSMF]\d\d for UCSB</Tooltip>}
+                            delay='5'
+                        >
                         <Form.Control
                             data-testid="SchoolForm-termRegex"
                             id="termRegex"
@@ -64,6 +75,7 @@ function SchoolForm({ initialContents, submitAction, buttonLabel = "Create" }) {
                             isInvalid={Boolean(errors.termRegex)}
                             {...register("termRegex", { required: true })}
                         />
+                        </OverlayTrigger> 
                         <Form.Control.Feedback type="invalid">
                             {errors.termRegex && 'Term Regex is required. '}
                         </Form.Control.Feedback>
@@ -75,6 +87,11 @@ function SchoolForm({ initialContents, submitAction, buttonLabel = "Create" }) {
                 <Col>
                     <Form.Group className="mb-3" >
                         <Form.Label htmlFor="termDescription">Term Description</Form.Label>
+                        <OverlayTrigger
+                            placement="top"
+                            overlay={<Tooltip>Please enter a term description. EX: Quarter, Semester or Session</Tooltip>}
+                            delay='5'
+                        >
                         <Form.Control
                             data-testid="SchoolForm-termDescription"
                             id="termDescription"
@@ -82,26 +99,9 @@ function SchoolForm({ initialContents, submitAction, buttonLabel = "Create" }) {
                             isInvalid={Boolean(errors.termDescription)}
                             {...register("termDescription", { required: true})}
                         />
+                        </OverlayTrigger>
                         <Form.Control.Feedback type="invalid">
                             {errors.termDescription && 'Term Description is required.'}
-                        </Form.Control.Feedback>
-                    </Form.Group>
-                </Col>
-            </Row>
-
-            <Row>
-                <Col>
-                    <Form.Group className="mb-3" >
-                        <Form.Label htmlFor="termError">Term Error</Form.Label>
-                        <Form.Control
-                            data-testid="SchoolForm-termError"
-                            id="termError"
-                            type="text"
-                            isInvalid={Boolean(errors.termError)}
-                            {...register("termError", { required: true})}
-                        />
-                        <Form.Control.Feedback type="invalid">
-                            {errors.termError && 'Term Error is required.'}
                         </Form.Control.Feedback>
                     </Form.Group>
                 </Col>

@@ -43,7 +43,7 @@ describe("SchoolUtils", () => {
 
             // assert
             expect(result).toEqual({
-                url: "/api/schools/delete",
+                url: "/api/schools",
                 method: "DELETE",
                 params: { abbrev: "ucsb" }
             });
