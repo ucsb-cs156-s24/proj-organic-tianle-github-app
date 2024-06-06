@@ -86,14 +86,12 @@ describe("SchoolCreatePage tests", () => {
     const nameField = screen.getByTestId("SchoolForm-name");
     const termRegexField = screen.getByTestId("SchoolForm-termRegex");
     const termDescriptionField = screen.getByTestId("SchoolForm-termDescription");
-    const termErrorField = screen.getByTestId("SchoolForm-termError");
     const submitButton = screen.getByTestId("SchoolForm-submit");
 
     fireEvent.change(abbrevField, { target: { value: "ucsb" } });
     fireEvent.change(nameField, {target: { value: "University of California, Santa Barbara" }});
     fireEvent.change(termRegexField, { target: { value: "[WSMF]\\d\\d" } });
     fireEvent.change(termDescriptionField, { target: { value: "S24" } });
-    fireEvent.change(termErrorField, { target: { value: "error" } });
     expect(submitButton).toBeInTheDocument();
 
     fireEvent.click(submitButton);
@@ -105,7 +103,7 @@ describe("SchoolCreatePage tests", () => {
       name: "University of California, Santa Barbara",
       termRegex: "%5BWSMF%5D%5Cd%5Cd", // termRegex is taken in encoded but it is decoded when actually used in the api
       termDescription: "S24",
-      termError: "error",
+      termError: undefined,
     });
 
     expect(mockToast).toBeCalledWith(`New school created - abbrev: ucsb`);
