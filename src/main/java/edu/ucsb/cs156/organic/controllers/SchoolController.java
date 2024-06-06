@@ -73,7 +73,6 @@ public class SchoolController extends ApiController{
         return school;
     }
 
-
     @Operation(summary= "List all schools")
     @PreAuthorize("hasRole('ROLE_USER')")
     @GetMapping("/all")
@@ -124,10 +123,6 @@ public class SchoolController extends ApiController{
         school.setTermRegex(decodedTermRegex);
         school.setTermDescription(termDescription);
         school.setTermError(termError);
-
-        if (!termDescription.matches(school.getTermRegex())) {
-            throw new IllegalArgumentException("Invalid termDescription format. It must follow the pattern " + school.getTermRegex());
-        }
 
         if (!abbrev.equals(abbrev.toLowerCase())){
             throw new IllegalArgumentException("Invalid abbrev format. Abbrev must be all lowercase");
