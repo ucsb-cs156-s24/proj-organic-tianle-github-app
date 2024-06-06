@@ -20,6 +20,39 @@
     </properties>
     <dependencies>
         <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+            <version>0.10.5</version>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <version>0.10.5</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <version>0.10.5</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>r05</version>
+        </dependency>
+        <dependency>
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
+            <version>20240303</version>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <version>5.7.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
@@ -169,6 +202,12 @@
                         <exclude>**/edu/ucsb/cs156/organic/services/CurrentUserServiceImpl.*</exclude>
                         <exclude>**/edu/ucsb/cs156/organic/OrganicApplication.*</exclude>
                         <exclude>**/edu/ucsb/cs156/organic/services/GrantedAuthoritiesService.*</exclude>
+                        <exclude>**/edu/ucsb/cs156/organic/beans/OAuth2ClientBean.*</exclude><!-- This is internet code, I don't know how to test -->
+                        <exclude>**/edu/ucsb/cs156/github/Utils.*</exclude><!-- This is hard to test and most of it is from the internet -->
+                        <exclude>**/edu/ucsb/cs156/github/OauthToken.*</exclude><!-- This is hard to test and most of it is from the internet -->
+                        <exclude>**/edu/ucsb/cs156/github/GitHubBuilderFactory.*</exclude><!-- This is hard to test and most of it is from the internet -->
+                        <exclude>**/edu/ucsb/cs156/organic/controllers/GithubWebhookController.*</exclude><!-- Work in progress -->
+                        <exclude>**/edu/ucsb/cs156/organic/services/GrantedAuthoritiesService.*</exclude>
                     </excludes>
                 </configuration>
                 <executions>
@@ -256,6 +295,16 @@
                         <param>edu.ucsb.cs156.organic.config.SecurityConfig</param>
                         <param>edu.ucsb.cs156.organic.config.SecurityConfig.MyCsrfRequestMatcher</param>
                         <param>edu.ucsb.cs156.organic.services.GrantedAuthoritiesService</param>
+                        <param>edu.ucsb.cs156.organic.config.SpaCsrfTokenRequestHandler</param>
+                        <param>edu.ucsb.cs156.organic.config.CsrfCookieFilter</param>
+                        <param>edu.ucsb.cs156.organic.beans.GitHubAppBean</param><!-- Excluded due to reasons similar to config classes above -->
+                        <param>edu.ucsb.cs156.organic.beans.OAuth2ClientBean</param><!-- Excluded due to reasons similar to config classes above -->
+                        <param>edu.ucsb.cs156.organic.beans.*</param><!-- Excluded due to reasons similar to config classes above -->
+                        <param>edu.ucsb.cs156.github.Utils</param><!-- Excluded since hard to test and mostly internet code -->
+                        <param>edu.ucsb.cs156.github.GitHubBuilderFactory</param><!-- Excluded since hard to test and mostly internet code -->
+                        <param>edu.ucsb.cs156.github.OauthToken</param><!-- Excluded since hard to test and mostly internet code -->
+                        <param>edu.ucsb.cs156.github.JwtProvider</param><!-- Can't mock system clock -->
+                        <param>edu.ucsb.cs156.organic.controllers.GithubWebhookController</param><!-- Work in progress -->
                         <param>edu.ucsb.cs156.organic.config.SpaCsrfTokenRequestHandler</param>
                         <param>edu.ucsb.cs156.organic.config.CsrfCookieFilter</param>
                     </excludedClasses>

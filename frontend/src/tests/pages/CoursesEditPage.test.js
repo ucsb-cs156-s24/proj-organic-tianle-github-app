@@ -4,6 +4,7 @@ import { MemoryRouter } from "react-router-dom";
 import CoursesEditPage from "main/pages/CoursesEditPage";
 import { apiCurrentUserFixtures } from "fixtures/currentUserFixtures";
 import { systemInfoFixtures } from "fixtures/systemInfoFixtures";
+import { coursesFixtures } from "fixtures/coursesFixtures";
 import axios from "axios";
 import AxiosMockAdapter from "axios-mock-adapter";
 
@@ -48,7 +49,7 @@ describe("CoursesEditPage tests", () => {
             axiosMock.resetHistory();
             axiosMock.onGet("/api/currentUser").reply(200, apiCurrentUserFixtures.userOnly);
             axiosMock.onGet("/api/systemInfo").reply(200, systemInfoFixtures.showingNeither);
-            axiosMock.onGet("/api/courses/get", { params: { id: 17 } }).timeout();
+            axiosMock.onGet("/api/courses/get", { params: { id: 17 } }).reply(200, coursesFixtures.oneCourse);
         });
 
         const queryClient = new QueryClient();
@@ -189,7 +190,96 @@ describe("CoursesEditPage tests", () => {
 
         });
 
+        test("Yes Github App tips!", async () => {
+            axiosMock.onGet("/api/courses/github", { params: { id: 17 } }).reply(200, {
+                exceptionThrown: false,
+                githubAppInstalled: false,
+                name: "Test"
+            });
+            render(
+                <QueryClientProvider client={queryClient}>
+                    <MemoryRouter>
+                        <CoursesEditPage />
+                    </MemoryRouter>
+                </QueryClientProvider>
+            );
 
+            await screen.findByTestId("CourseEdit-githubAppTips");
+
+            // expect(screen.getByTestId("CourseEdit-githubAppTips")).toHaveStyle("color: red");
+
+            expect(axiosMock.history.get.length).toBeGreaterThanOrEqual(2); // times called
+            const githubAppTips = screen.getByTestId("CourseEdit-githubAppTips");
+            expect(githubAppTips).toBeInTheDocument();
+            const githubAppTipsCard = screen.getByTestId("CourseEdit-GHAT-Card");
+            expect(githubAppTipsCard).toBeInTheDocument();
+            expect(githubAppTipsCard).toHaveStyle("margin-bottom: 20px");
+            expect(githubAppTipsCard).toHaveStyle("margin-top: 20px");
+            const githubAppTipsLink = screen.getByTestId("CourseEdit-GHAT-Link");
+            expect(githubAppTipsLink).toBeInTheDocument();
+            expect(githubAppTipsLink).toHaveAttribute("href", "https://github.com/apps/Test");
+            expect(githubAppTipsLink).toHaveAttribute("target", "_blank");
+            expect(githubAppTipsLink).toHaveAttribute("rel", "noopener noreferrer");
+        });
+
+        test("No Github App tips!", async () => {
+            axiosMock.onGet("/api/courses/github", { params: { id: 17 } }).reply(200, {
+                githubAppInstalled: true
+            });
+            render(
+                <QueryClientProvider client={queryClient}>
+                    <MemoryRouter>
+                        <CoursesEditPage />
+                    </MemoryRouter>
+                </QueryClientProvider>
+            );
+            await screen.findByTestId("CoursesForm-name");
+            expect(screen.queryByTestId("CourseEdit-githubAppTips")).not.toBeInTheDocument();
+        });
+
+        test("Error Github App tips! (exceptionThrown)", async () => {
+            axiosMock.onGet("/api/courses/github", { params: { id: 17 } }).reply(200, {
+                githubAppInstalled: false,
+                exceptionThrown: true,
+                exceptionMessage: "OOOOOOPS THIS IS AN ERROR"
+            });
+            render(
+                <QueryClientProvider client={queryClient}>
+                    <MemoryRouter>
+                        <CoursesEditPage />
+                    </MemoryRouter>
+                </QueryClientProvider>
+            );
+            await screen.findByTestId("CoursesForm-name");
+            expect(screen.getByTestId("CourseEdit-githubAppTips")).toBeInTheDocument();
+            expect(screen.getByText("OOOOOOPS THIS IS AN ERROR")).toBeInTheDocument();
+            expect(screen.getByText("Please contact your administrator to check the configuration of the app.")).toBeInTheDocument();
+            expect(screen.getByText("Warning: An error occurred while trying to check the GitHub App status")).toBeInTheDocument();
+            const githubAppTipsCard = screen.getByTestId("CourseEdit-GHAT-Card-Error1");
+            expect(githubAppTipsCard).toBeInTheDocument();
+            expect(githubAppTipsCard).toHaveStyle("margin-bottom: 20px");
+            expect(githubAppTipsCard).toHaveStyle("margin-top: 20px");
+        });
+
+        test("Error Github App tips! (no name)", async () => {
+            axiosMock.onGet("/api/courses/github", { params: { id: 17 } }).reply(200, {
+                githubAppInstalled: false,
+            });
+            render(
+                <QueryClientProvider client={queryClient}>
+                    <MemoryRouter>
+                        <CoursesEditPage />
+                    </MemoryRouter>
+                </QueryClientProvider>
+            );
+            await screen.findByTestId("CoursesForm-name");
+            expect(screen.getByTestId("CourseEdit-githubAppTips")).toBeInTheDocument();
+            expect(screen.getByTestId("CourseEdit-GHAT-Card-Error2")).toBeInTheDocument();
+            expect(screen.getByText("Please contact your administrator to check the configuration of the app.")).toBeInTheDocument();
+            const githubAppTipsCard = screen.getByTestId("CourseEdit-GHAT-Card-Error2");
+            expect(githubAppTipsCard).toBeInTheDocument();
+            expect(githubAppTipsCard).toHaveStyle("margin-bottom: 22px");
+            expect(githubAppTipsCard).toHaveStyle("margin-top: 22px");
+        });
     });
 });
-

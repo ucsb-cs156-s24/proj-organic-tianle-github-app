@@ -5,16 +5,22 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.awaitility.Awaitility.await;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,7 +31,16 @@ import java.util.Optional;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
+import org.kohsuke.github.GHApp;
+import org.kohsuke.github.GHAppCreateTokenBuilder;
+import org.kohsuke.github.GHAppInstallation;
+import org.kohsuke.github.GHAppInstallationToken;
+import org.kohsuke.github.GHEmail;
+import org.kohsuke.github.GHMyself;
+import org.kohsuke.github.GHOrganization;
+import org.kohsuke.github.GitHub;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.AutoConfigureDataJpa;
@@ -46,12 +61,21 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 
+import edu.ucsb.cs156.github.GitHubBuilderFactory;
+import edu.ucsb.cs156.github.JwtProvider;
+import edu.ucsb.cs156.github.OauthToken;
 import edu.ucsb.cs156.organic.entities.Course;
+import edu.ucsb.cs156.organic.entities.School;
 import edu.ucsb.cs156.organic.entities.Staff;
+import edu.ucsb.cs156.organic.entities.Student;
 import edu.ucsb.cs156.organic.entities.User;
 import edu.ucsb.cs156.organic.entities.jobs.Job;
+import edu.ucsb.cs156.organic.models.GeneralOperationResp;
+import edu.ucsb.cs156.organic.models.OrgStatus;
 import edu.ucsb.cs156.organic.repositories.CourseRepository;
+import edu.ucsb.cs156.organic.repositories.SchoolRepository;
 import edu.ucsb.cs156.organic.repositories.StaffRepository;
+import edu.ucsb.cs156.organic.repositories.StudentRepository;
 import edu.ucsb.cs156.organic.repositories.UserRepository;
 import edu.ucsb.cs156.organic.repositories.jobs.JobsRepository;
 import edu.ucsb.cs156.organic.services.jobs.JobService;
@@ -68,135 +92,150 @@ import org.mockito.Captor;
 @AutoConfigureDataJpa
 public class CoursesControllerTests extends ControllerTestCase {
 
-    @MockBean
-    UserRepository userRepository;
+        @MockBean
+        UserRepository userRepository;
 
-    @MockBean
-    CourseRepository courseRepository;
+        @MockBean
+        CourseRepository courseRepository;
 
-    @MockBean
-    StaffRepository courseStaffRepository;
+        @MockBean
+        StaffRepository courseStaffRepository;
 
-    @Autowired
-    CurrentUserService userService;
+        @MockBean
+        StudentRepository studentRepository;
 
-    @Autowired
-    ObjectMapper objectMapper;
+        @MockBean
+        SchoolRepository schoolRepository;
 
-    Course course1 = Course.builder()
-            .id(1L)
-            .name("CS156")
-            .school("UCSB")
-            .term("F23")
-            .startDate(LocalDateTime.parse("2023-09-01T00:00:00"))
-            .endDate(LocalDateTime.parse("2023-12-31T00:00:00"))
-            .githubOrg("ucsb-cs156-f23")
-            .build();
+        @MockBean
+        JwtProvider jwtProvider;
 
-    Course course2 = Course.builder()
-            .id(1L)
-            .name("CS148")
-            .school("UCSB")
-            .term("S24")
-            .startDate(LocalDateTime.parse("2024-01-01T00:00:00"))
-            .endDate(LocalDateTime.parse("2024-03-31T00:00:00"))
-            .githubOrg("ucsb-cs148-w24")
-            .build();
+        @MockBean
+        OauthToken oauthToken;
 
-    @WithMockUser(roles = { "ADMIN" })
-    @Test
-    public void admin_can_get_all_courses() throws Exception {
+        @MockBean
+        GitHubBuilderFactory gitHubBuilderFactory;
 
-        // arrange
+        @Autowired
+        CurrentUserService userService;
 
-        ArrayList<Course> expectedCourses = new ArrayList<>();
-        expectedCourses.addAll(Arrays.asList(course1, course2));
+        @Autowired
+        ObjectMapper objectMapper;
 
-        when(courseRepository.findAll()).thenReturn(expectedCourses);
+        Course course1 = Course.builder()
+                        .id(1L)
+                        .name("CS156")
+                        .school("UCSB")
+                        .term("F23")
+                        .startDate(LocalDateTime.parse("2023-09-01T00:00:00"))
+                        .endDate(LocalDateTime.parse("2023-12-31T00:00:00"))
+                        .githubOrg("ucsb-cs156-f23")
+                        .build();
 
-        // act
-        MvcResult response = mockMvc.perform(get("/api/courses/all"))
-                .andExpect(status().isOk()).andReturn();
+        Course course2 = Course.builder()
+                        .id(1L)
+                        .name("CS148")
+                        .school("UCSB")
+                        .term("S24")
+                        .startDate(LocalDateTime.parse("2024-01-01T00:00:00"))
+                        .endDate(LocalDateTime.parse("2024-03-31T00:00:00"))
+                        .githubOrg("ucsb-cs148-w24")
+                        .build();
 
-        // assert
+        @WithMockUser(roles = { "ADMIN" })
+        @Test
+        public void admin_can_get_all_courses() throws Exception {
 
-        verify(courseRepository, atLeastOnce()).findAll();
-        String expectedJson = mapper.writeValueAsString(expectedCourses);
-        String responseString = response.getResponse().getContentAsString();
-        assertEquals(expectedJson, responseString);
-    }
+                // arrange
 
-    @WithMockUser(roles = { "USER" })
-    @Test
-    public void user_can_get_only_courses_for_which_they_are_staff() throws Exception {
+                ArrayList<Course> expectedCourses = new ArrayList<>();
+                expectedCourses.addAll(Arrays.asList(course1, course2));
 
-        // arrange
+                when(courseRepository.findAll()).thenReturn(expectedCourses);
 
-        ArrayList<Course> expectedCourses = new ArrayList<>();
-        expectedCourses.addAll(Arrays.asList(course1, course2));
+                // act
+                MvcResult response = mockMvc.perform(get("/api/courses/all"))
+                                .andExpect(status().isOk()).andReturn();
 
-        when(courseRepository.findCoursesStaffedByUser(any())).thenReturn(expectedCourses);
+                // assert
 
-        // act
-        MvcResult response = mockMvc.perform(get("/api/courses/all"))
-                .andExpect(status().isOk()).andReturn();
+                verify(courseRepository, atLeastOnce()).findAll();
+                String expectedJson = mapper.writeValueAsString(expectedCourses);
+                String responseString = response.getResponse().getContentAsString();
+                assertEquals(expectedJson, responseString);
+        }
 
-        // assert
-        verify(courseRepository, atLeastOnce()).findCoursesStaffedByUser(any());
-        String expectedJson = mapper.writeValueAsString(expectedCourses);
-        String responseString = response.getResponse().getContentAsString();
-        assertEquals(expectedJson, responseString);
-    }
+        @WithMockUser(roles = { "USER" })
+        @Test
+        public void user_can_get_only_courses_for_which_they_are_staff() throws Exception {
 
-         // Tests for GET /api/courses/get?id=...
-         @Test
-         public void logged_out_users_cannot_get_by_id() throws Exception {
-                 mockMvc.perform(get("/api/courses/get?id=1"))
-                                 .andExpect(status().is(403)); // logged out users can't get by id
-         }
- 
-         @WithMockUser(roles = { "ADMIN", "USER" })
-         @Test
-         public void test_that_admin_can_get_by_id_when_the_id_exists() throws Exception {
- 
-                 // arrange
-                 when(courseRepository.findById(eq(1L))).thenReturn(Optional.of(course1));
+                // arrange
 
-                 // act
-                 MvcResult response = mockMvc.perform(get("/api/courses/get?id=1"))
-                                 .andExpect(status().isOk()).andReturn();
- 
-                 // assert
-                 verify(courseRepository, times(1)).findById(eq(1L));
-                 String expectedJson = mapper.writeValueAsString(course1);
-                 String responseString = response.getResponse().getContentAsString();
-                 assertEquals(expectedJson, responseString);
-         }
+                ArrayList<Course> expectedCourses = new ArrayList<>();
+                expectedCourses.addAll(Arrays.asList(course1, course2));
 
-         @WithMockUser(roles = { "ADMIN", "USER" })
-         @Test
-         public void test_that_admin_cannot_get_by_id_when_the_id_does_not_exist() throws Exception {
- 
-                 // arrange
- 
-                 when(courseRepository.findById(eq(7L))).thenReturn(Optional.empty());
- 
-                 // act
-                 MvcResult response = mockMvc.perform(get("/api/courses/get?id=7"))
-                                 .andExpect(status().isNotFound()).andReturn();
-        
-                 // assert
- 
-                 verify(courseRepository, times(1)).findById(eq(7L));
-                 Map<String, Object> json = responseToJson(response);
-                 assertEquals("EntityNotFoundException", json.get("type"));
-                 assertEquals("Course with id 7 not found", json.get("message"));
-         }
+                when(courseRepository.findCoursesStaffedByUser(any())).thenReturn(expectedCourses);
 
-         @WithMockUser(roles = { "USER" })
-         @Test
-         public void test_that_instructor_can_get_by_id_when_the_id_exists() throws Exception {
- 
+                // act
+                MvcResult response = mockMvc.perform(get("/api/courses/all"))
+                                .andExpect(status().isOk()).andReturn();
+
+                // assert
+                verify(courseRepository, atLeastOnce()).findCoursesStaffedByUser(any());
+                String expectedJson = mapper.writeValueAsString(expectedCourses);
+                String responseString = response.getResponse().getContentAsString();
+                assertEquals(expectedJson, responseString);
+        }
+
+        // Tests for GET /api/courses/get?id=...
+        @Test
+        public void logged_out_users_cannot_get_by_id() throws Exception {
+                mockMvc.perform(get("/api/courses/get?id=1"))
+                                .andExpect(status().is(403)); // logged out users can't get by id
+        }
+
+        @WithMockUser(roles = { "ADMIN", "USER" })
+        @Test
+        public void test_that_admin_can_get_by_id_when_the_id_exists() throws Exception {
+
+                // arrange
+                when(courseRepository.findById(eq(1L))).thenReturn(Optional.of(course1));
+
+                // act
+                MvcResult response = mockMvc.perform(get("/api/courses/get?id=1"))
+                                .andExpect(status().isOk()).andReturn();
+
+                // assert
+                verify(courseRepository, times(1)).findById(eq(1L));
+                String expectedJson = mapper.writeValueAsString(course1);
+                String responseString = response.getResponse().getContentAsString();
+                assertEquals(expectedJson, responseString);
+        }
+
+        @WithMockUser(roles = { "ADMIN", "USER" })
+        @Test
+        public void test_that_admin_cannot_get_by_id_when_the_id_does_not_exist() throws Exception {
+
+                // arrange
+
+                when(courseRepository.findById(eq(7L))).thenReturn(Optional.empty());
+
+                // act
+                MvcResult response = mockMvc.perform(get("/api/courses/get?id=7"))
+                                .andExpect(status().isNotFound()).andReturn();
+
+                // assert
+
+                verify(courseRepository, times(1)).findById(eq(7L));
+                Map<String, Object> json = responseToJson(response);
+                assertEquals("EntityNotFoundException", json.get("type"));
+                assertEquals("Course with id 7 not found", json.get("message"));
+        }
+
+        @WithMockUser(roles = { "USER" })
+        @Test
+        public void test_that_instructor_can_get_by_id_when_the_id_exists() throws Exception {
+
                 User currentUser = currentUserService.getCurrentUser().getUser();
 
                 Staff courseStaff1 = Staff.builder()
@@ -214,7 +253,6 @@ public class CoursesControllerTests extends ControllerTestCase {
                 MvcResult response = mockMvc.perform(get("/api/courses/get?id=1"))
                                 .andExpect(status().isOk()).andReturn();
 
-
                 // assert
                 verify(courseRepository, times(1)).findById(eq(1L));
                 verify(courseStaffRepository, times(1)).findByCourseIdAndGithubId(eq(course1.getId()),
@@ -222,177 +260,225 @@ public class CoursesControllerTests extends ControllerTestCase {
                 String expectedJson = mapper.writeValueAsString(course1);
                 String responseString = response.getResponse().getContentAsString();
                 assertEquals(expectedJson, responseString);
-         }
+        }
 
-         @WithMockUser(roles = { "USER" })
-         @Test
-         public void test_that_non_admin_non_instructor_cannot_get_an_existing_course() throws Exception {
- 
-                 // arrange
+        @WithMockUser(roles = { "USER" })
+        @Test
+        public void test_that_non_admin_non_instructor_cannot_get_an_existing_course() throws Exception {
+
+                // arrange
                 User currentUser = currentUserService.getCurrentUser().getUser();
 
                 when(courseRepository.findById(eq(course1.getId()))).thenReturn(Optional.of(course1));
 
                 // act
                 mockMvc.perform(get("/api/courses/get?id=1"))
-                   .andExpect(status().isForbidden());
-
+                                .andExpect(status().isForbidden());
 
                 // assert
                 verify(courseRepository, times(1)).findById(eq(1L));
-         }
+        }
 
-    @WithMockUser(roles = { "ADMIN", "USER" })
-    @Test
-    public void an_admin_user_can_post_a_new_course() throws Exception {
-        // arrange
+        @WithMockUser(roles = { "ADMIN", "USER" })
+        @Test
+        public void an_admin_user_can_post_a_new_course() throws Exception {
+                // arrange
 
-        Course courseBefore = Course.builder()
-                .name("CS16")
-                .school("UCSB")
-                .term("F23")
-                .startDate(LocalDateTime.parse("2023-09-01T00:00:00"))
-                .endDate(LocalDateTime.parse("2023-12-31T00:00:00"))
-                .githubOrg("ucsb-cs16-f23")
-                .build();
+                Course courseBefore = Course.builder()
+                                .name("CS16")
+                                .school("UCSB")
+                                .term("F23")
+                                .startDate(LocalDateTime.parse("2023-09-01T00:00:00"))
+                                .endDate(LocalDateTime.parse("2023-12-31T00:00:00"))
+                                .githubOrg("ucsb-cs16-f23")
+                                .githubAppInstallationId(0)
+                                .build();
 
-        Course courseAfter = Course.builder()
-                .id(222L)
-                .name("CS16")
-                .school("UCSB")
-                .term("F23")
-                .startDate(LocalDateTime.parse("2023-09-01T00:00:00"))
-                .endDate(LocalDateTime.parse("2023-12-31T00:00:00"))
-                .githubOrg("ucsb-cs16-f23")
-                .build();
+                Course courseAfter = Course.builder()
+                                .id(0L)
+                                .name("CS16")
+                                .school("UCSB")
+                                .term("F23")
+                                .startDate(LocalDateTime.parse("2023-09-01T00:00:00"))
+                                .endDate(LocalDateTime.parse("2023-12-31T00:00:00"))
+                                .githubOrg("ucsb-cs16-f23")
+                                .githubAppInstallationId(0)
+                                .build();
 
-        when(courseRepository.save(eq(courseBefore))).thenReturn(courseAfter);
+                when(courseRepository.save(eq(courseBefore))).thenReturn(courseAfter);
 
-        // act
-        MvcResult response = mockMvc.perform(
-                post("/api/courses/post?name=CS16&school=UCSB&term=F23&startDate=2023-09-01T00:00:00&endDate=2023-12-31T00:00:00&githubOrg=ucsb-cs16-f23")
-                        .with(csrf()))
-                .andExpect(status().isOk()).andReturn();
+                // act
+                MvcResult response = mockMvc.perform(
+                                post("/api/courses/post?name=CS16&school=UCSB&term=F23&startDate=2023-09-01T00:00:00&endDate=2023-12-31T00:00:00&githubOrg=ucsb-cs16-f23")
+                                                .with(csrf()))
+                                .andExpect(status().isOk()).andReturn();
 
-        // assert
-        verify(courseRepository, times(1)).save(courseBefore);
-        String expectedJson = mapper.writeValueAsString(courseAfter);
-        String responseString = response.getResponse().getContentAsString();
-        assertEquals(expectedJson, responseString);
-    }
+                // assert
+                verify(courseRepository, times(1)).save(courseBefore);
+                String expectedJson = mapper.writeValueAsString(courseAfter);
+                String responseString = response.getResponse().getContentAsString();
+                assertEquals(expectedJson, responseString);
+        }
 
-    @WithMockUser(roles = { "INSTRUCTOR", "USER" })
-    @Test
-    public void an_instructor_can_post_a_new_course() throws Exception {
-        // arrange
+        @WithMockUser(roles = { "ADMIN", "USER" })
+        @Test
+        public void an_admin_user_can_post_a_new_course_with_gha_ok() throws Exception {
+                // arrange
+                GitHub fake = mock(GitHub.class);
+                GHApp fakeApp = mock(GHApp.class);
+                GHAppInstallation fakeInst = mock(GHAppInstallation.class);
+                when(gitHubBuilderFactory.build(any(JwtProvider.class))).thenReturn(fake);
+                when(fake.getApp()).thenReturn(fakeApp);
+                when(fakeApp.getInstallationByOrganization(any())).thenReturn(fakeInst);
+                when(fakeInst.getId()).thenReturn(123L);
 
-        Course courseBefore = Course.builder()
-                .name("CS16")
-                .school("UCSB")
-                .term("F23")
-                .startDate(LocalDateTime.parse("2023-09-01T00:00:00"))
-                .endDate(LocalDateTime.parse("2023-12-31T00:00:00"))
-                .githubOrg("ucsb-cs16-f23")
-                .build();
+                Course courseBefore = Course.builder()
+                                .name("CS16")
+                                .school("UCSB")
+                                .term("F23")
+                                .startDate(LocalDateTime.parse("2023-09-01T00:00:00"))
+                                .endDate(LocalDateTime.parse("2023-12-31T00:00:00"))
+                                .githubOrg("ucsb-cs16-f23")
+                                .githubAppInstallationId(123)
+                                .build();
 
-        Course courseAfter = Course.builder()
-                .id(222L)
-                .name("CS16")
-                .school("UCSB")
-                .term("F23")
-                .startDate(LocalDateTime.parse("2023-09-01T00:00:00"))
-                .endDate(LocalDateTime.parse("2023-12-31T00:00:00"))
-                .githubOrg("ucsb-cs16-f23")
-                .build();
+                Course courseAfter = Course.builder()
+                                .id(222L)
+                                .name("CS16")
+                                .school("UCSB")
+                                .term("F23")
+                                .startDate(LocalDateTime.parse("2023-09-01T00:00:00"))
+                                .endDate(LocalDateTime.parse("2023-12-31T00:00:00"))
+                                .githubOrg("ucsb-cs16-f23")
+                                .githubAppInstallationId(123)
+                                .build();
 
-        when(courseRepository.save(eq(courseBefore))).thenReturn(courseAfter);
+                when(courseRepository.save(eq(courseBefore))).thenReturn(courseAfter);
 
-        // act
-        MvcResult response = mockMvc.perform(
-                post("/api/courses/post?name=CS16&school=UCSB&term=F23&startDate=2023-09-01T00:00:00&endDate=2023-12-31T00:00:00&githubOrg=ucsb-cs16-f23")
-                        .with(csrf()))
-                .andExpect(status().isOk()).andReturn();
+                // act
+                MvcResult response = mockMvc.perform(
+                                post("/api/courses/post?name=CS16&school=UCSB&term=F23&startDate=2023-09-01T00:00:00&endDate=2023-12-31T00:00:00&githubOrg=ucsb-cs16-f23")
+                                                .with(csrf()))
+                                .andExpect(status().isOk()).andReturn();
 
-        // assert
-        verify(courseRepository, times(1)).save(courseBefore);
-        String expectedJson = mapper.writeValueAsString(courseAfter);
-        String responseString = response.getResponse().getContentAsString();
-        assertEquals(expectedJson, responseString);
-    }
+                // assert
+                verify(courseRepository, times(1)).save(courseBefore);
+                String expectedJson = mapper.writeValueAsString(courseAfter);
+                String responseString = response.getResponse().getContentAsString();
+                assertEquals(expectedJson, responseString);
+        }
 
-    
-    @WithMockUser(roles = { "USER" })
-    @Test
-    public void an_user_cannot_post_a_new_course() throws Exception {
-        // arrange
+        @WithMockUser(roles = { "INSTRUCTOR", "USER" })
+        @Test
+        public void an_instructor_can_post_a_new_course() throws Exception {
+                // arrange
 
-        Course courseBefore = Course.builder()
-                .name("CS16")
-                .school("UCSB")
-                .term("F23")
-                .startDate(LocalDateTime.parse("2023-09-01T00:00:00"))
-                .endDate(LocalDateTime.parse("2023-12-31T00:00:00"))
-                .githubOrg("ucsb-cs16-f23")
-                .build();
+                Course courseBefore = Course.builder()
+                                .name("CS16")
+                                .school("UCSB")
+                                .term("F23")
+                                .startDate(LocalDateTime.parse("2023-09-01T00:00:00"))
+                                .endDate(LocalDateTime.parse("2023-12-31T00:00:00"))
+                                .githubOrg("ucsb-cs16-f23")
+                                .build();
 
-        Course courseAfter = Course.builder()
-                .id(222L)
-                .name("CS16")
-                .school("UCSB")
-                .term("F23")
-                .startDate(LocalDateTime.parse("2023-09-01T00:00:00"))
-                .endDate(LocalDateTime.parse("2023-12-31T00:00:00"))
-                .githubOrg("ucsb-cs16-f23")
-                .build();
+                Course courseAfter = Course.builder()
+                                .id(0L)
+                                .name("CS16")
+                                .school("UCSB")
+                                .term("F23")
+                                .startDate(LocalDateTime.parse("2023-09-01T00:00:00"))
+                                .endDate(LocalDateTime.parse("2023-12-31T00:00:00"))
+                                .githubOrg("ucsb-cs16-f23")
+                                .build();
 
-        when(courseRepository.save(eq(courseBefore))).thenReturn(courseAfter);
+                when(courseRepository.save(eq(courseBefore))).thenReturn(courseAfter);
 
-        // act
-        MvcResult response = mockMvc.perform(
-                post("/api/courses/post?name=CS16&school=UCSB&term=F23&startDate=2023-09-01T00:00:00&endDate=2023-12-31T00:00:00&githubOrg=ucsb-cs16-f23")
-                        .with(csrf()))
-                .andExpect(status().isForbidden()).andReturn();
-    
-    }
+                // act
+                MvcResult response = mockMvc.perform(
+                                post("/api/courses/post?name=CS16&school=UCSB&term=F23&startDate=2023-09-01T00:00:00&endDate=2023-12-31T00:00:00&githubOrg=ucsb-cs16-f23")
+                                                .with(csrf()))
+                                .andExpect(status().isOk()).andReturn();
 
-    @WithMockUser(roles = { "ADMIN", "USER" })
-    @Test
-    public void an_admin_user_can_add_a_staff_member_to_a_course() throws Exception {
-        // arrange
+                // assert
+                verify(courseRepository, times(1)).save(courseBefore);
+                String expectedJson = mapper.writeValueAsString(courseAfter);
+                String responseString = response.getResponse().getContentAsString();
+                assertEquals(expectedJson, responseString);
+        }
 
-        User user = User.builder().githubId(12345).githubLogin("scottpchow23").build();
+        @WithMockUser(roles = { "USER" })
+        @Test
+        public void an_user_cannot_post_a_new_course() throws Exception {
+                // arrange
 
-        Staff courseStaffBefore = Staff.builder()
-                .courseId(course1.getId())
-                .githubId(user.getGithubId())
-                .user(user)
-                .build();
+                Course courseBefore = Course.builder()
+                                .name("CS16")
+                                .school("UCSB")
+                                .term("F23")
+                                .startDate(LocalDateTime.parse("2023-09-01T00:00:00"))
+                                .endDate(LocalDateTime.parse("2023-12-31T00:00:00"))
+                                .githubOrg("ucsb-cs16-f23")
+                                .build();
 
-        Staff courseStaffAfter = Staff.builder()
-                .id(456L)
-                .courseId(course1.getId())
-                .githubId(user.getGithubId())
-                .user(user)
-                .build();
+                Course courseAfter = Course.builder()
+                                .id(222L)
+                                .name("CS16")
+                                .school("UCSB")
+                                .term("F23")
+                                .startDate(LocalDateTime.parse("2023-09-01T00:00:00"))
+                                .endDate(LocalDateTime.parse("2023-12-31T00:00:00"))
+                                .githubOrg("ucsb-cs16-f23")
+                                .build();
 
-        when(courseRepository.findById(eq(course1.getId()))).thenReturn(Optional.of(course1));
-        when(userRepository.findByGithubLogin(eq("scottpchow23"))).thenReturn(Optional.of(user));
-        when(courseStaffRepository.save(eq(courseStaffBefore))).thenReturn(courseStaffAfter);
+                when(courseRepository.save(eq(courseBefore))).thenReturn(courseAfter);
 
-        // act
-        MvcResult response = mockMvc.perform(
-                post("/api/courses/addStaff?courseId=1&githubLogin=scottpchow23")
-                        .with(csrf()))
-                .andExpect(status().isOk()).andReturn();
+                // act
+                MvcResult response = mockMvc.perform(
+                                post("/api/courses/post?name=CS16&school=UCSB&term=F23&startDate=2023-09-01T00:00:00&endDate=2023-12-31T00:00:00&githubOrg=ucsb-cs16-f23")
+                                                .with(csrf()))
+                                .andExpect(status().isForbidden()).andReturn();
 
-        // assert
-        verify(courseStaffRepository, times(1)).save(courseStaffBefore);
-        String expectedJson = mapper.writeValueAsString(courseStaffAfter);
-        String responseString = response.getResponse().getContentAsString();
-        assertEquals(expectedJson, responseString);
-    }
+        }
 
-    @WithMockUser(roles = { "ADMIN", "USER" })
+        @WithMockUser(roles = { "ADMIN", "USER" })
+        @Test
+        public void an_admin_user_can_add_a_staff_member_to_a_course() throws Exception {
+                // arrange
+
+                User user = User.builder().githubId(12345).githubLogin("scottpchow23").build();
+
+                Staff courseStaffBefore = Staff.builder()
+                                .courseId(course1.getId())
+                                .githubId(user.getGithubId())
+                                .user(user)
+                                .build();
+
+                Staff courseStaffAfter = Staff.builder()
+                                .id(456L)
+                                .courseId(course1.getId())
+                                .githubId(user.getGithubId())
+                                .user(user)
+                                .build();
+
+                when(courseRepository.findById(eq(course1.getId()))).thenReturn(Optional.of(course1));
+                when(userRepository.findByGithubLogin(eq("scottpchow23"))).thenReturn(Optional.of(user));
+                when(courseStaffRepository.save(eq(courseStaffBefore))).thenReturn(courseStaffAfter);
+
+                // act
+                MvcResult response = mockMvc.perform(
+                                post("/api/courses/addStaff?courseId=1&githubLogin=scottpchow23")
+                                                .with(csrf()))
+                                .andExpect(status().isOk()).andReturn();
+
+                // assert
+                verify(courseStaffRepository, times(1)).save(courseStaffBefore);
+                String expectedJson = mapper.writeValueAsString(courseStaffAfter);
+                String responseString = response.getResponse().getContentAsString();
+                assertEquals(expectedJson, responseString);
+        }
+
+        @WithMockUser(roles = { "ADMIN", "USER" })
         @Test
         public void an_admin_user_cannot_add_staff_to_a_non_existing_course() throws Exception {
                 // arrange
@@ -407,19 +493,22 @@ public class CoursesControllerTests extends ControllerTestCase {
 
                 // assert
 
-                Map<String,String> responseMap = mapper.readValue(response.getResponse().getContentAsString(), new TypeReference<Map<String,String>>(){});
-                Map<String,String> expectedMap = Map.of("message", "Course with id 42 not found", "type", "EntityNotFoundException");
+                Map<String, String> responseMap = mapper.readValue(response.getResponse().getContentAsString(),
+                                new TypeReference<Map<String, String>>() {
+                                });
+                Map<String, String> expectedMap = Map.of("message", "Course with id 42 not found", "type",
+                                "EntityNotFoundException");
                 assertEquals(expectedMap, responseMap);
         }
 
-    @WithMockUser(roles = { "ADMIN", "USER" })
+        @WithMockUser(roles = { "ADMIN", "USER" })
         @Test
         public void an_admin_user_cannot_add_non_existing_user_to_staff_of_an_existing_course() throws Exception {
                 // arrange
 
                 when(courseRepository.findById(eq(course1.getId()))).thenReturn(Optional.of(course1));
                 when(userRepository.findByGithubLogin(eq("sadGaucho"))).thenReturn(Optional.empty());
-               
+
                 // act
 
                 MvcResult response = mockMvc.perform(
@@ -429,55 +518,58 @@ public class CoursesControllerTests extends ControllerTestCase {
 
                 // assert
 
-                Map<String,String> responseMap = mapper.readValue(response.getResponse().getContentAsString(), new TypeReference<Map<String,String>>(){});
-                Map<String,String> expectedMap = Map.of("message", "User with id sadGaucho not found", "type", "EntityNotFoundException");
+                Map<String, String> responseMap = mapper.readValue(response.getResponse().getContentAsString(),
+                                new TypeReference<Map<String, String>>() {
+                                });
+                Map<String, String> expectedMap = Map.of("message", "User with id sadGaucho not found", "type",
+                                "EntityNotFoundException");
                 assertEquals(expectedMap, responseMap);
         }
 
-    @WithMockUser(roles = { "ADMIN", "USER" })
-    @Test
-    public void an_admin_user_can_get_staff_for_a_course() throws Exception {
-        // arrange
+        @WithMockUser(roles = { "ADMIN", "USER" })
+        @Test
+        public void an_admin_user_can_get_staff_for_a_course() throws Exception {
+                // arrange
 
-        User user1 = User.builder().githubId(12345).githubLogin("scottpchow23").build();
-        User user2 = User.builder().githubId(67890).githubLogin("pconrad").build();
+                User user1 = User.builder().githubId(12345).githubLogin("scottpchow23").build();
+                User user2 = User.builder().githubId(67890).githubLogin("pconrad").build();
 
-        Staff courseStaff1 = Staff.builder()
-                .id(111L)
-                .courseId(course1.getId())
-                .githubId(user1.getGithubId())
-                .user(user1)
-                .build();
+                Staff courseStaff1 = Staff.builder()
+                                .id(111L)
+                                .courseId(course1.getId())
+                                .githubId(user1.getGithubId())
+                                .user(user1)
+                                .build();
 
-        Staff courseStaff2 = Staff.builder()
-                .id(222L)
-                .courseId(course2.getId())
-                .githubId(user2.getGithubId())
-                .user(user2)
-                .build();
+                Staff courseStaff2 = Staff.builder()
+                                .id(222L)
+                                .courseId(course2.getId())
+                                .githubId(user2.getGithubId())
+                                .user(user2)
+                                .build();
 
-        ArrayList<Staff> expectedCourseStaff = new ArrayList<>();
-        expectedCourseStaff.addAll(Arrays.asList(courseStaff1, courseStaff2));
+                ArrayList<Staff> expectedCourseStaff = new ArrayList<>();
+                expectedCourseStaff.addAll(Arrays.asList(courseStaff1, courseStaff2));
 
-        when(courseRepository.findById(eq(course1.getId()))).thenReturn(Optional.of(course1));
-        when(courseStaffRepository.findByCourseId(eq(course1.getId()))).thenReturn(expectedCourseStaff);
+                when(courseRepository.findById(eq(course1.getId()))).thenReturn(Optional.of(course1));
+                when(courseStaffRepository.findByCourseId(eq(course1.getId()))).thenReturn(expectedCourseStaff);
 
-        // act
+                // act
 
-        MvcResult response = mockMvc.perform(
-                get("/api/courses/getStaff?courseId=1")
-                        .with(csrf()))
-                .andExpect(status().isOk()).andReturn();
+                MvcResult response = mockMvc.perform(
+                                get("/api/courses/getStaff?courseId=1")
+                                                .with(csrf()))
+                                .andExpect(status().isOk()).andReturn();
 
-        // assert
+                // assert
 
-        verify(courseStaffRepository, times(1)).findByCourseId(eq(course1.getId()));
-        String expectedJson = mapper.writeValueAsString(expectedCourseStaff);
-        String responseString = response.getResponse().getContentAsString();
-        assertEquals(expectedJson, responseString);
-    }
+                verify(courseStaffRepository, times(1)).findByCourseId(eq(course1.getId()));
+                String expectedJson = mapper.writeValueAsString(expectedCourseStaff);
+                String responseString = response.getResponse().getContentAsString();
+                assertEquals(expectedJson, responseString);
+        }
 
-    @WithMockUser(roles = { "ADMIN", "USER" })
+        @WithMockUser(roles = { "ADMIN", "USER" })
         @Test
         public void an_admin_user_cannot_get_staff_for_a_non_existing_course() throws Exception {
                 // arrange
@@ -492,13 +584,15 @@ public class CoursesControllerTests extends ControllerTestCase {
 
                 // assert
 
-                Map<String,String> responseMap = mapper.readValue(response.getResponse().getContentAsString(), new TypeReference<Map<String,String>>(){});
-                Map<String,String> expectedMap = Map.of("message", "Course with id 42 not found", "type", "EntityNotFoundException");
+                Map<String, String> responseMap = mapper.readValue(response.getResponse().getContentAsString(),
+                                new TypeReference<Map<String, String>>() {
+                                });
+                Map<String, String> expectedMap = Map.of("message", "Course with id 42 not found", "type",
+                                "EntityNotFoundException");
                 assertEquals(expectedMap, responseMap);
         }
 
-
-        // Tests for DELETE /api/staff?id=... 
+        // Tests for DELETE /api/staff?id=...
 
         @WithMockUser(roles = { "ADMIN", "USER" })
         @Test
@@ -548,368 +642,1129 @@ public class CoursesControllerTests extends ControllerTestCase {
                 Map<String, Object> json = responseToJson(response);
                 assertEquals("Staff with id 15 not found", json.get("message"));
         }
-  
-    // admin cannot update non existing course
-    @WithMockUser(roles = { "ADMIN", "USER" })
-    @Test
-    public void an_admin_user_cannot_update_non_existing_course() throws Exception {
-        // arrange
 
-        when(courseRepository.findById(eq(42L))).thenReturn(Optional.empty());
-        // act
+        // admin cannot update non existing course
+        @WithMockUser(roles = { "ADMIN", "USER" })
+        @Test
+        public void an_admin_user_cannot_update_non_existing_course() throws Exception {
+                // arrange
 
-        MvcResult response = mockMvc.perform(
-                put("/api/courses/update?id=42&name=CS16&school=UCSB&term=F23&startDate=2023-09-01T00:00:00&endDate=2023-12-31T00:00:00&githubOrg=ucsb-cs16-f23")
+                when(courseRepository.findById(eq(42L))).thenReturn(Optional.empty());
+                // act
+
+                MvcResult response = mockMvc.perform(
+                                put("/api/courses/update?id=42&name=CS16&school=UCSB&term=F23&startDate=2023-09-01T00:00:00&endDate=2023-12-31T00:00:00&githubOrg=ucsb-cs16-f23")
+                                                .with(csrf()))
+                                .andExpect(status().isNotFound()).andReturn();
+                // assert
+
+                Map<String, String> responseMap = mapper.readValue(response.getResponse().getContentAsString(),
+                                new TypeReference<Map<String, String>>() {
+                                });
+                Map<String, String> expectedMap = Map.of("message", "Course with id 42 not found", "type",
+                                "EntityNotFoundException");
+                assertEquals(expectedMap, responseMap);
+        }
+
+        @WithMockUser(roles = { "ADMIN", "USER" })
+        @Test
+        public void an_admin_user_can_update_a_course() throws Exception {
+                // arrange
+
+                Course courseBefore = course1;
+
+                Course courseAfter = course2;
+                courseBefore.setGithubAppInstallationId(123);
+                courseAfter.setSchool("UCSD");
+                courseAfter.setGithubAppInstallationId(0);
+
+                when(courseRepository.findById(eq(courseBefore.getId()))).thenReturn(Optional.of(courseBefore));
+                when(courseRepository.save(eq(courseAfter))).thenReturn(courseAfter);
+
+                String urlTemplate = String.format(
+                                "/api/courses/update?id=%d&name=%s&school=%s&term=%s&startDate=%s&endDate=%s&githubOrg=%s",
+                                courseAfter.getId(), courseAfter.getName(), courseAfter.getSchool(),
+                                courseAfter.getTerm(),
+                                courseAfter.getStartDate().toString(), courseAfter.getEndDate().toString(),
+                                courseAfter.getGithubOrg());
+                MvcResult response = mockMvc.perform(
+                                put(urlTemplate)
+                                                .with(csrf()))
+                                .andExpect(status().isOk()).andReturn();
+
+                // assert
+                assertEquals(courseBefore.getGithubAppInstallationId(), 0);
+                verify(courseRepository, times(1)).save(courseBefore);
+                String expectedJson = mapper.writeValueAsString(courseAfter);
+                String responseString = response.getResponse().getContentAsString();
+                assertEquals(expectedJson, responseString);
+        }
+
+        @WithMockUser(roles = { "ADMIN", "USER" })
+        @Test
+        public void an_admin_user_can_update_a_course_with_gha_ok() throws Exception {
+                // arrange
+
+                Course courseBefore = course1;
+
+                Course courseAfter = course2;
+                courseAfter.setGithubAppInstallationId(123);
+                courseAfter.setSchool("UCSD");
+
+                when(courseRepository.findById(eq(courseBefore.getId()))).thenReturn(Optional.of(courseBefore));
+                when(courseRepository.save(eq(courseAfter))).thenReturn(courseAfter);
+
+                GitHub fake = mock(GitHub.class);
+                GHApp fakeApp = mock(GHApp.class);
+                GHAppInstallation fakeInst = mock(GHAppInstallation.class);
+                when(gitHubBuilderFactory.build(any(JwtProvider.class))).thenReturn(fake);
+                when(fake.getApp()).thenReturn(fakeApp);
+                when(fakeApp.getInstallationByOrganization(any())).thenReturn(fakeInst);
+                when(fakeInst.getId()).thenReturn(123L);
+
+                String urlTemplate = String.format(
+                                "/api/courses/update?id=%d&name=%s&school=%s&term=%s&startDate=%s&endDate=%s&githubOrg=%s",
+                                courseAfter.getId(), courseAfter.getName(), courseAfter.getSchool(),
+                                courseAfter.getTerm(),
+                                courseAfter.getStartDate().toString(), courseAfter.getEndDate().toString(),
+                                courseAfter.getGithubOrg());
+                MvcResult response = mockMvc.perform(
+                                put(urlTemplate)
+                                                .with(csrf()))
+                                .andExpect(status().isOk()).andReturn();
+
+                // assert
+                verify(courseRepository, times(1)).save(courseBefore);
+                String expectedJson = mapper.writeValueAsString(courseAfter);
+                String responseString = response.getResponse().getContentAsString();
+                assertEquals(expectedJson, responseString);
+        }
+
+        // Instructor can update course if they are staff
+        @WithMockUser(roles = { "INSTRUCTOR", "USER" })
+        @Test
+        public void an_instructor_user_can_update_a_course_if_they_are_staff() throws Exception {
+                // arrange
+
+                // get current user, make sure that when courseStaffRepository.findByCourseId is
+                // called, it returns the current user
+
+                Course courseBefore = course1;
+
+                Course courseAfter = course2;
+                courseAfter.setSchool("UCSD");
+
+                when(courseRepository.findById(eq(courseBefore.getId()))).thenReturn(Optional.of(courseBefore));
+                when(courseRepository.save(eq(courseAfter))).thenReturn(courseAfter);
+
+                // get current user
+                User user = userService.getCurrentUser().getUser();
+                // mock user is staff
+                Staff courseStaff = Staff.builder().courseId(courseBefore.getId()).githubId(user.getGithubId()).build();
+                when(courseStaffRepository.findByCourseIdAndGithubId(courseBefore.getId(), user.getGithubId()))
+                                .thenReturn(Optional
+                                                .of(courseStaff));
+
+                // act
+                // get urlTemplate from courseAfter using string interpolation
+                String urlTemplate = String.format(
+                                "/api/courses/update?id=%d&name=%s&school=%s&term=%s&startDate=%s&endDate=%s&githubOrg=%s",
+                                courseAfter.getId(), courseAfter.getName(), courseAfter.getSchool(),
+                                courseAfter.getTerm(),
+                                courseAfter.getStartDate().toString(), courseAfter.getEndDate().toString(),
+                                courseAfter.getGithubOrg());
+                MvcResult response = mockMvc.perform(
+                                put(urlTemplate)
+                                                .with(csrf()))
+                                .andExpect(status().isOk()).andReturn();
+
+                // assert
+                verify(courseRepository, times(1)).save(courseBefore);
+                String expectedJson = mapper.writeValueAsString(courseAfter);
+                String responseString = response.getResponse().getContentAsString();
+                assertEquals(expectedJson, responseString);
+        }
+
+        // Instructor cannot update course if they are not staff
+        @WithMockUser(roles = { "INSTRUCTOR", "USER" })
+        @Test
+        public void an_instructor_user_cannot_update_a_course_if_they_are_not_staff() throws Exception {
+                // arrange
+
+                Course courseBefore = Course.builder()
+                                .id(1L)
+                                .name("CS16")
+                                .school("UCSB")
+                                .term("F23")
+                                .startDate(LocalDateTime.parse("2023-09-01T00:00:00"))
+                                .endDate(LocalDateTime.parse("2023-12-31T00:00:00"))
+                                .githubOrg("ucsb-cs16-f23")
+                                .build();
+
+                Course courseAfter = Course.builder()
+                                .id(1L)
+                                .name("CS16")
+                                .school("UCSB")
+                                .term("F23")
+                                .startDate(LocalDateTime.parse("2023-09-01T00:00:00"))
+                                .endDate(LocalDateTime.parse("2023-12-31T00:00:00"))
+                                .githubOrg("ucsb-cs16-f23")
+                                .build();
+
+                when(courseRepository.findById(eq(courseBefore.getId()))).thenReturn(Optional.of(courseBefore));
+                when(courseRepository.save(eq(courseAfter))).thenReturn(courseAfter);
+                // mock user is not staff
+
+                User user = userService.getCurrentUser().getUser();
+                Integer githubId = user.getGithubId();
+                ArrayList<Staff> notStaff = new ArrayList<>();
+                notStaff.add(Staff.builder().githubId(githubId - 1).build());
+                when(courseStaffRepository.findByCourseId(courseBefore.getId()))
+                                .thenReturn(notStaff);
+                // act
+                MvcResult response = mockMvc.perform(
+                                put("/api/courses/update?id=1&name=CS16&school=UCSB&term=F23&startDate=2023-09-01T00:00:00&endDate=2023-12-31T00:00:00&githubOrg=ucsb-cs16-f23")
+                                                .with(csrf()))
+                                .andExpect(status().isForbidden()).andReturn();
+
+                // assert
+                verify(courseRepository, times(0)).save(courseAfter);
+
+                // verify message is correct
+                Map<String, String> responseMap = mapper.readValue(response.getResponse().getContentAsString(),
+                                new TypeReference<Map<String, String>>() {
+                                });
+                Map<String, String> expectedMap = Map.of("message", "User is not a staff member for this course",
+                                "type",
+                                "AccessDeniedException");
+                assertEquals(expectedMap, responseMap);
+        }
+
+        // User cannot update course at all
+        @WithMockUser(roles = { "USER" })
+        @Test
+        public void a_user_cannot_update_a_course() throws Exception {
+                // arrange
+
+                Course courseBefore = Course.builder()
+                                .id(1L)
+                                .name("CS16")
+                                .school("UCSB")
+                                .term("F23")
+                                .startDate(LocalDateTime.parse("2023-09-01T00:00:00"))
+                                .endDate(LocalDateTime.parse("2023-12-31T00:00:00"))
+                                .githubOrg("ucsb-cs16-f23")
+                                .build();
+
+                Course courseAfter = Course.builder()
+                                .id(1L)
+                                .name("CS32")
+                                .school("UCSB")
+                                .term("F23")
+                                .startDate(LocalDateTime.parse("2023-09-01T00:00:00"))
+                                .endDate(LocalDateTime.parse("2023-12-31T00:00:00"))
+                                .githubOrg("ucsb-cs32-f23")
+                                .build();
+
+                when(courseRepository.findById(eq(courseBefore.getId()))).thenReturn(Optional.of(courseBefore));
+                when(courseRepository.save(eq(courseAfter))).thenReturn(courseAfter);
+
+                // act
+                MvcResult response = mockMvc.perform(
+                                put("/api/courses/update?id=1&name=CS32&school=UCSB&term=F23&startDate=2023-09-01T00:00:00&endDate=2023-12-31T00:00:00&githubOrg=ucsb-cs32-f23")
+                                                .with(csrf()))
+                                .andExpect(status().isForbidden()).andReturn();
+
+                // assert
+                verify(courseRepository, times(0)).save(courseAfter);
+
+                // verify message is correct
+                Map<String, String> responseMap = mapper.readValue(response.getResponse().getContentAsString(),
+                                new TypeReference<Map<String, String>>() {
+                                });
+                Map<String, String> expectedMap = Map.of("message", "Access Denied", "type",
+                                "AccessDeniedException");
+                assertEquals(expectedMap, responseMap);
+        }
+
+        // admin user cannot delete non existing course
+        @WithMockUser(roles = { "ADMIN", "USER" })
+        @Test
+        public void an_admin_user_cannot_delete_non_existing_course() throws Exception {
+                // arrange
+
+                when(courseRepository.findById(eq(42L))).thenReturn(Optional.empty());
+                // act
+
+                MvcResult response = mockMvc.perform(
+                                delete("/api/courses/delete?id=42")
+                                                .with(csrf()))
+                                .andExpect(status().isNotFound()).andReturn();
+                // assert
+
+                Map<String, String> responseMap = mapper.readValue(response.getResponse().getContentAsString(),
+                                new TypeReference<Map<String, String>>() {
+                                });
+                Map<String, String> expectedMap = Map.of("message", "Course with id 42 not found", "type",
+                                "EntityNotFoundException");
+                assertEquals(expectedMap, responseMap);
+        }
+
+        // admin user can delete course
+        @WithMockUser(roles = { "ADMIN", "USER" })
+        @Test
+        public void an_admin_user_can_delete_a_course() throws Exception {
+                // arrange
+
+                Course courseBefore = Course.builder()
+                                .id(1L)
+                                .name("CS16")
+                                .school("UCSB")
+                                .term("F23")
+                                .startDate(LocalDateTime.parse("2023-09-01T00:00:00"))
+                                .endDate(LocalDateTime.parse("2023-12-31T00:00:00"))
+                                .githubOrg("ucsb-cs16-f23")
+                                .build();
+
+                when(courseRepository.findById(eq(courseBefore.getId()))).thenReturn(Optional.of(courseBefore));
+
+                // act
+                MvcResult response = mockMvc.perform(
+                                delete("/api/courses/delete?id=1")
+                                                .with(csrf()))
+                                .andExpect(status().isOk()).andReturn();
+
+                // assert
+                verify(courseRepository, times(1)).delete(courseBefore);
+                String expectedJson = mapper.writeValueAsString(courseBefore);
+                String responseString = response.getResponse().getContentAsString();
+                assertEquals(expectedJson, responseString);
+        }
+
+        // Instructor can delete course if they are staff
+        @WithMockUser(roles = { "INSTRUCTOR", "USER" })
+        @Test
+        public void an_instructor_user_can_delete_a_course_if_they_are_staff() throws Exception {
+                // arrange
+
+                // get current user, make sure that when courseStaffRepository.findByCourseId is
+                // called, it returns the current user
+
+                Course courseBefore = Course.builder()
+                                .id(1L)
+                                .name("CS16")
+                                .school("UCSB")
+                                .term("F23")
+                                .startDate(LocalDateTime.parse("2023-09-01T00:00:00"))
+                                .endDate(LocalDateTime.parse("2023-12-31T00:00:00"))
+                                .githubOrg("ucsb-cs16-f23")
+                                .build();
+
+                when(courseRepository.findById(eq(courseBefore.getId()))).thenReturn(Optional.of(courseBefore));
+
+                // get current user
+                User user = userService.getCurrentUser().getUser();
+                // mock user is staff
+                Staff courseStaff = Staff.builder().courseId(courseBefore.getId()).githubId(user.getGithubId()).build();
+                when(courseStaffRepository.findByCourseIdAndGithubId(courseBefore.getId(), user.getGithubId()))
+                                .thenReturn(Optional
+                                                .of(courseStaff));
+                // act
+                MvcResult response = mockMvc.perform(
+                                delete("/api/courses/delete?id=1")
+                                                .with(csrf()))
+                                .andExpect(status().isOk()).andReturn();
+
+                // assert
+                verify(courseRepository, times(1)).delete(courseBefore);
+                String expectedJson = mapper.writeValueAsString(courseBefore);
+                String responseString = response.getResponse().getContentAsString();
+                assertEquals(expectedJson, responseString);
+        }
+
+        // Instructor cannot delete course if they are not staff
+        @WithMockUser(roles = { "INSTRUCTOR", "USER" })
+        @Test
+        public void an_instructor_user_cannot_delete_a_course_if_they_are_not_staff() throws Exception {
+                // arrange
+
+                Course courseBefore = Course.builder()
+                                .id(1L)
+                                .name("CS16")
+                                .school("UCSB")
+                                .term("F23")
+                                .startDate(LocalDateTime.parse("2023-09-01T00:00:00"))
+                                .endDate(LocalDateTime.parse("2023-12-31T00:00:00"))
+                                .githubOrg("ucsb-cs16-f23")
+                                .build();
+
+                when(courseRepository.findById(eq(courseBefore.getId()))).thenReturn(Optional.of(courseBefore));
+                // mock user is not staff
+
+                User user = userService.getCurrentUser().getUser();
+                Integer githubId = user.getGithubId();
+                ArrayList<Staff> notStaff = new ArrayList<>();
+                notStaff.add(Staff.builder().githubId(githubId - 1).build());
+                when(courseStaffRepository.findByCourseId(courseBefore.getId()))
+                                .thenReturn(notStaff);
+                // act
+                MvcResult response = mockMvc.perform(
+                                delete("/api/courses/delete?id=1")
+                                                .with(csrf()))
+                                .andExpect(status().isForbidden()).andReturn();
+
+                // assert
+                verify(courseRepository, times(0)).delete(courseBefore);
+
+                // verify message is correct
+                Map<String, String> responseMap = mapper.readValue(response.getResponse().getContentAsString(),
+                                new TypeReference<Map<String, String>>() {
+                                });
+                Map<String, String> expectedMap = Map.of("message", "User is not a staff member for this course",
+                                "type",
+                                "AccessDeniedException");
+                assertEquals(expectedMap, responseMap);
+        }
+
+        // User cannot delete course at all
+        @WithMockUser(roles = { "USER" })
+        @Test
+        public void a_user_cannot_delete_a_course() throws Exception {
+                // arrange
+
+                Course courseBefore = Course.builder()
+                                .id(1L)
+                                .name("CS16")
+                                .school("UCSB")
+                                .term("F23")
+                                .startDate(LocalDateTime.parse("2023-09-01T00:00:00"))
+                                .endDate(LocalDateTime.parse("2023-12-31T00:00:00"))
+                                .githubOrg("ucsb-cs16-f23")
+                                .build();
+
+                when(courseRepository.findById(eq(courseBefore.getId()))).thenReturn(Optional.of(courseBefore));
+
+                // act
+                MvcResult response = mockMvc.perform(
+                                delete("/api/courses/delete?id=1")
+                                                .with(csrf()))
+                                .andExpect(status().isForbidden()).andReturn();
+
+                // assert
+                verify(courseRepository, times(0)).delete(courseBefore);
+
+                // verify message is correct
+                Map<String, String> responseMap = mapper.readValue(response.getResponse().getContentAsString(),
+                                new TypeReference<Map<String, String>>() {
+                                });
+                Map<String, String> expectedMap = Map.of("message", "Access Denied", "type",
+                                "AccessDeniedException");
+                assertEquals(expectedMap, responseMap);
+        }
+
+        @WithMockUser(roles = { "ADMIN" })
+        @Test
+        public void admin_can_query_github_app_status() throws Exception {
+                // arrange
+                Course course2 = course1;
+                course2.setGithubAppInstallationId(0);
+                when(courseRepository.findById(eq(1L))).thenReturn(Optional.of(course2));
+
+                GitHub fake = mock(GitHub.class);
+                GHApp fakeApp = mock(GHApp.class);
+                GHAppInstallation fakeInst = mock(GHAppInstallation.class);
+                when(gitHubBuilderFactory.build(any(JwtProvider.class))).thenReturn(fake);
+                when(fake.getApp()).thenReturn(fakeApp);
+                when(fakeApp.getInstallationByOrganization(any())).thenReturn(fakeInst);
+                when(fakeInst.getId()).thenReturn(123L);
+                when(fakeApp.getSlug()).thenReturn("123");
+
+                // act
+                MvcResult response = mockMvc.perform(get("/api/courses/github?id=1"))
+                                .andExpect(status().isOk()).andReturn();
+
+                // assert
+                verify(courseRepository, times(1)).findById(eq(1L));
+                verify(fakeApp, times(1)).getInstallationByOrganization(eq("ucsb-cs156-f23"));
+
+                OrgStatus o = OrgStatus.builder().org("ucsb-cs156-f23").githubAppInstalled(true).name("123").build();
+
+                String expectedJson = mapper.writeValueAsString(o);
+                String responseString = response.getResponse().getContentAsString();
+                assertEquals(expectedJson, responseString);
+        }
+
+        @WithMockUser(roles = { "ADMIN" })
+        @Test
+        public void admin_can_query_github_app_status_with_error() throws Exception {
+                // arrange
+                Course course2 = mock(Course.class);
+                when(course2.getGithubOrg()).thenReturn(course1.getGithubOrg());
+                when(courseRepository.findById(eq(1L))).thenReturn(Optional.of(course2));
+
+                GitHub fake = mock(GitHub.class);
+                GHApp fakeApp = mock(GHApp.class);
+                GHAppInstallation fakeInst = mock(GHAppInstallation.class);
+                when(gitHubBuilderFactory.build(any(JwtProvider.class))).thenReturn(fake);
+                when(fake.getApp()).thenThrow(new IOException("Failed to communicate with github"));
+                when(fakeApp.getInstallationByOrganization(any())).thenReturn(fakeInst);
+                when(fakeInst.getId()).thenReturn(123L);
+                when(fakeApp.getSlug()).thenReturn("123");
+
+                // act
+                MvcResult response = mockMvc.perform(get("/api/courses/github?id=1"))
+                                .andExpect(status().isOk()).andReturn();
+
+                // assert
+                verify(courseRepository, times(1)).findById(eq(1L));
+
+                verify(course2, times(1)).setGithubAppInstallationId(eq(0L));
+
+                verify(courseRepository, times(1)).save(eq(course2));
+
+                OrgStatus o = OrgStatus.builder().org("ucsb-cs156-f23").githubAppInstalled(false).name("")
+                                .exceptionThrown(true)
+                                .exceptionMessage("java.io.IOException: Failed to communicate with github").build();
+
+                String expectedJson = mapper.writeValueAsString(o);
+                String responseString = response.getResponse().getContentAsString();
+                assertEquals(expectedJson, responseString);
+        }
+
+        @WithMockUser(roles = { "USER" })
+        @Test
+        public void user_can_query_github_app_status_if_is_staff() throws Exception {
+                // arrange
+                Staff courseStaff1 = Staff.builder()
+                                .id(1L)
+                                .courseId(course1.getId())
+                                .build();
+                when(courseStaffRepository.findByCourseIdAndGithubId(any(), any()))
+                                .thenReturn(Optional.of(courseStaff1));
+                Course course2 = course1;
+                course2.setGithubAppInstallationId(0);
+                when(courseRepository.findById(eq(1L))).thenReturn(Optional.of(course2));
+
+                GitHub fake = mock(GitHub.class);
+                GHApp fakeApp = mock(GHApp.class);
+                GHAppInstallation fakeInst = mock(GHAppInstallation.class);
+                when(gitHubBuilderFactory.build(any(JwtProvider.class))).thenReturn(fake);
+                when(fake.getApp()).thenReturn(fakeApp);
+                when(fakeApp.getInstallationByOrganization(any())).thenReturn(fakeInst);
+                when(fakeInst.getId()).thenReturn(123L);
+                when(fakeApp.getSlug()).thenReturn("123");
+                // act
+                MvcResult response = mockMvc.perform(get("/api/courses/github?id=1"))
+                                .andExpect(status().isOk()).andReturn();
+
+                // assert
+                verify(courseRepository, times(1)).findById(eq(1L));
+                verify(fakeApp, times(1)).getInstallationByOrganization(eq("ucsb-cs156-f23"));
+
+                OrgStatus o = OrgStatus.builder().org("ucsb-cs156-f23").name("123").githubAppInstalled(true).build();
+
+                String expectedJson = mapper.writeValueAsString(o);
+                String responseString = response.getResponse().getContentAsString();
+                assertEquals(expectedJson, responseString);
+                assertEquals(123, course2.getGithubAppInstallationId());
+        }
+
+        @WithMockUser(roles = { "USER" })
+        @Test
+        public void user_can_not_query_github_app_status() throws Exception {
+                // arrange
+                when(courseRepository.findById(eq(1L))).thenReturn(Optional.of(course1));
+
+                // act
+                MvcResult response = mockMvc.perform(get("/api/courses/github?id=1"))
+                                .andExpect(status().isForbidden()).andReturn();
+        }
+
+        @WithMockUser(roles = { "USER" })
+        @Test
+        public void user_can_not_query_if_dne() throws Exception {
+                // arrange
+                User currentUser = currentUserService.getCurrentUser().getUser();
+
+                when(courseRepository.findById(eq(course1.getId()))).thenReturn(Optional.of(course1));
+                when(courseStaffRepository.findByCourseIdAndGithubId(any(),
+                                any())).thenReturn(Optional.empty());
+
+                // act
+                mockMvc.perform(get("/api/courses/github?id=1"))
+                                .andExpect(status().isForbidden());
+
+                verify(courseRepository, times(1)).findById(eq(1L));
+        }
+
+        @WithMockUser(roles = { "USER" })
+        @Test
+        public void admin_can_query_github_app_status_that_dne() throws Exception {
+                // arrange
+                when(courseRepository.findById(eq(1L))).thenReturn(Optional.empty());
+
+                // act
+                MvcResult response = mockMvc.perform(get("/api/courses/github?id=1"))
+                                .andExpect(status().isNotFound()).andReturn();
+        }
+
+        @WithMockUser(roles = { "ADMIN" })
+        @Test
+        public void admin_can_query_github_app_status_not_linked() throws Exception {
+                // arrange
+                Course fakeCourse = mock(Course.class);
+                when(fakeCourse.getGithubOrg()).thenReturn(course1.getGithubOrg());
+                when(courseRepository.findById(eq(1L))).thenReturn(Optional.of(fakeCourse));
+
+                GitHub fake = mock(GitHub.class);
+                GHApp fakeApp = mock(GHApp.class);
+                GHAppInstallation fakeInst = mock(GHAppInstallation.class);
+                when(gitHubBuilderFactory.build(any(JwtProvider.class))).thenReturn(fake);
+                when(fake.getApp()).thenReturn(fakeApp);
+                when(fakeApp.getInstallationByOrganization(any())).thenThrow(new IOException("Failed to get - DNE"));
+                when(fakeInst.getId()).thenReturn(123L);
+                when(fakeApp.getSlug()).thenReturn("123");
+
+                // act
+                MvcResult response = mockMvc.perform(get("/api/courses/github?id=1"))
+                                .andExpect(status().isOk()).andReturn();
+
+                // assert
+                verify(courseRepository, times(1)).findById(eq(1L));
+                verify(fakeApp, times(1)).getInstallationByOrganization(eq("ucsb-cs156-f23"));
+
+                verify(fakeCourse, times(1)).setGithubAppInstallationId(eq(0L));
+                verify(courseRepository, times(1)).save(eq(fakeCourse));
+
+                OrgStatus o = OrgStatus.builder().org("ucsb-cs156-f23").githubAppInstalled(false).name("123")
+                                .exceptionThrown(true)
+                                .exceptionMessage("java.io.IOException: Failed to get - DNE").build();
+
+                String expectedJson = mapper.writeValueAsString(o);
+                String responseString = response.getResponse().getContentAsString();
+                assertEquals(expectedJson, responseString);
+        }
+
+        @WithMockUser(roles = { "USER" })
+        @Test
+        public void user_can_get_join_info() throws Exception {
+
+                when(courseRepository.findById(eq(course1.getId()))).thenReturn(Optional.of(course1));
+
+                // act
+                MvcResult response = mockMvc.perform(get("/api/courses/join?id=1"))
+                                .andExpect(status().isOk()).andReturn();
+                // assert
+                verify(courseRepository, times(1)).findById(eq(1L));
+                String expectedJson = mapper.writeValueAsString(course1);
+                String responseString = response.getResponse().getContentAsString();
+                assertEquals(expectedJson, responseString);
+        }
+
+        @WithMockUser(roles = { "USER" })
+        @Test
+        public void user_can_get_join_info_dne() throws Exception {
+
+                when(courseRepository.findById(eq(course1.getId()))).thenReturn(Optional.empty());
+
+                // act
+                MvcResult response = mockMvc.perform(get("/api/courses/join?id=1"))
+                                .andExpect(status().isNotFound()).andReturn();
+                // assert
+                verify(courseRepository, times(1)).findById(eq(1L));
+        }
+
+        @WithMockUser(roles = { "USER" })
+        @Test
+        public void user_can_join_course_successfully() throws Exception {
+                User currentUser = currentUserService.getCurrentUser().getUser();
+                School school = School.builder().name("UCSB").abbrev("ucsb").build();
+                // ArrayList<String> emails = new ArrayList<>(List.of("user@ucsb.edu"));
+                Student student = Student.builder().courseId(course1.getId()).studentId("user").email("user@ucsb.edu")
+                                .githubId(currentUser.getGithubId()).build();
+
+                Student student1 = Student.builder().courseId(course1.getId()).studentId("user").email("user@ucsb.edu")
+                                .githubId(0).build();
+
+                when(courseRepository.findById(eq(course1.getId()))).thenReturn(Optional.of(course1));
+                when(schoolRepository.findByName(eq("UCSB"))).thenReturn(Optional.of(school));
+
+                when(studentRepository.findByCourseIdAndEmail(eq(course1.getId()),
+                                eq("user@ucsb.edu")))
+                                .thenReturn(Optional.of(student1));
+                when(studentRepository.save(any())).thenReturn(student);
+                when(oauthToken.getToken()).thenReturn("fake-token");
+
+                // Build for user
+                GHEmail fakeemail = mock(GHEmail.class);
+                when(fakeemail.getEmail()).thenReturn("user@ucsb.edu");
+                List<GHEmail> emails = new ArrayList<GHEmail>(List.of(fakeemail));
+
+                GitHub fakeUser = mock(GitHub.class);
+                GHMyself fakeMyself = mock(GHMyself.class);
+                when(gitHubBuilderFactory.buildOauth(any())).thenReturn(fakeUser);
+                when(fakeUser.getMyself()).thenReturn(fakeMyself);
+                when(fakeMyself.getEmails2()).thenReturn(emails);
+
+                // Build for normal app
+                GitHub fake = mock(GitHub.class);
+                GHApp fakeApp = mock(GHApp.class);
+                GHAppInstallation fakeInst = mock(GHAppInstallation.class);
+                GHAppCreateTokenBuilder fakeTokenBuilder = mock(GHAppCreateTokenBuilder.class);
+                GHAppInstallationToken fakeInstToken = mock(GHAppInstallationToken.class);
+                when(gitHubBuilderFactory.build(any(JwtProvider.class))).thenReturn(fake);
+                when(fake.getApp()).thenReturn(fakeApp);
+                when(fakeApp.getInstallationByOrganization(any())).thenReturn(fakeInst);
+                when(fakeInst.createToken()).thenReturn(fakeTokenBuilder);
+                when(fakeTokenBuilder.create()).thenReturn(fakeInstToken);
+                when(fakeInstToken.getToken()).thenReturn("OHHHHH FAKE TOKEN");
+                when(fakeApp.getSlug()).thenReturn("123");
+
+                // Build with token
+                GitHub fakeWithInstToken = mock(GitHub.class);
+                GHOrganization fakeOrg = mock(GHOrganization.class);
+                when(gitHubBuilderFactory.build(anyString())).thenReturn(fakeWithInstToken);
+                when(fakeWithInstToken.getOrganization(anyString())).thenReturn(fakeOrg);
+                doNothing().when(fakeOrg).add(fakeMyself, GHOrganization.Role.MEMBER);
+
+                MvcResult response = mockMvc.perform(post("/api/courses/join?courseId=1")
                                 .with(csrf()))
-                .andExpect(status().isNotFound()).andReturn();
-        // assert
+                                .andExpect(status().isOk()).andReturn();
 
-        Map<String,String> responseMap = mapper.readValue(response.getResponse().getContentAsString(), new TypeReference<Map<String,String>>(){});
-        Map<String,String> expectedMap = Map.of("message", "Course with id 42 not found", "type", "EntityNotFoundException");
-        assertEquals(expectedMap, responseMap);
-    }
+                verify(courseRepository, times(1)).findById(eq(1L));
+                verify(studentRepository, times(1)).save(any(Student.class));
+                assertEquals(currentUser.getGithubId(), student1.getGithubId());
+                assertEquals(currentUser.getGithubId(), student1.getUser().getGithubId());
+                String expectedJson = mapper.writeValueAsString(
+                                GeneralOperationResp.builder().success(true).message("Joined Successfully").build());
+                String responseString = response.getResponse().getContentAsString();
+                assertEquals(expectedJson, responseString);
+        }
 
-    @WithMockUser(roles = { "ADMIN", "USER" })
-    @Test
-    public void an_admin_user_can_update_a_course() throws Exception {
-        // arrange
+        @WithMockUser(roles = { "USER" })
+        @Test
+        public void user_can_join_course_successfully_with_null_id() throws Exception {
+                User currentUser = currentUserService.getCurrentUser().getUser();
+                School school = School.builder().name("UCSB").abbrev("ucsb").build();
+                // ArrayList<String> emails = new ArrayList<>(List.of("user@ucsb.edu"));
+                Student student = Student.builder().courseId(course1.getId()).studentId("user").email("user@ucsb.edu")
+                                .githubId(currentUser.getGithubId()).build();
 
-        Course courseBefore = course1;
+                Student student1 = Student.builder().courseId(course1.getId()).studentId("user").email("user@ucsb.edu")
+                                .githubId(null).build();
 
-        Course courseAfter = course2;
-        courseAfter.setSchool("UCSD");
+                when(courseRepository.findById(eq(course1.getId()))).thenReturn(Optional.of(course1));
+                when(schoolRepository.findByName(eq("UCSB"))).thenReturn(Optional.of(school));
+                when(studentRepository.findByCourseIdAndEmail(eq(course1.getId()),
+                                eq("user@ucsb.edu")))
+                                .thenReturn(Optional.of(student1));
+                when(studentRepository.save(any())).thenReturn(student);
 
-        when(courseRepository.findById(eq(courseBefore.getId()))).thenReturn(Optional.of(courseBefore));
-        when(courseRepository.save(eq(courseAfter))).thenReturn(courseAfter);
+                // Build for user
+                GHEmail fakeemail = mock(GHEmail.class);
+                when(fakeemail.getEmail()).thenReturn("user@ucsb.edu");
+                List<GHEmail> emails = new ArrayList<GHEmail>(List.of(fakeemail));
 
-        String urlTemplate = String.format(
-                "/api/courses/update?id=%d&name=%s&school=%s&term=%s&startDate=%s&endDate=%s&githubOrg=%s",
-                courseAfter.getId(), courseAfter.getName(), courseAfter.getSchool(), courseAfter.getTerm(),
-                courseAfter.getStartDate().toString(), courseAfter.getEndDate().toString(), courseAfter.getGithubOrg());
-        MvcResult response = mockMvc.perform(
-                put(urlTemplate)
-                        .with(csrf()))
-                .andExpect(status().isOk()).andReturn();
+                GitHub fakeUser = mock(GitHub.class);
+                GHMyself fakeMyself = mock(GHMyself.class);
+                when(gitHubBuilderFactory.buildOauth(any())).thenReturn(fakeUser);
+                when(fakeUser.getMyself()).thenReturn(fakeMyself);
+                when(fakeMyself.getEmails2()).thenReturn(emails);
 
-        // assert
-        verify(courseRepository, times(1)).save(courseBefore);
-        String expectedJson = mapper.writeValueAsString(courseAfter);
-        String responseString = response.getResponse().getContentAsString();
-        assertEquals(expectedJson, responseString);
-    }
+                // Build for normal app
+                GitHub fake = mock(GitHub.class);
+                GHApp fakeApp = mock(GHApp.class);
+                GHAppInstallation fakeInst = mock(GHAppInstallation.class);
+                GHAppCreateTokenBuilder fakeTokenBuilder = mock(GHAppCreateTokenBuilder.class);
+                GHAppInstallationToken fakeInstToken = mock(GHAppInstallationToken.class);
+                when(gitHubBuilderFactory.build(any(JwtProvider.class))).thenReturn(fake);
+                when(fake.getApp()).thenReturn(fakeApp);
+                when(fakeApp.getInstallationByOrganization(any())).thenReturn(fakeInst);
+                when(fakeInst.createToken()).thenReturn(fakeTokenBuilder);
+                when(fakeTokenBuilder.create()).thenReturn(fakeInstToken);
+                when(fakeInstToken.getToken()).thenReturn("OHHHHH FAKE TOKEN");
+                when(fakeApp.getSlug()).thenReturn("123");
 
-    // Instructor can update course if they are staff
-    @WithMockUser(roles = { "INSTRUCTOR", "USER" })
-    @Test
-    public void an_instructor_user_can_update_a_course_if_they_are_staff() throws Exception {
-        // arrange
+                // Build with token
+                GitHub fakeWithInstToken = mock(GitHub.class);
+                GHOrganization fakeOrg = mock(GHOrganization.class);
+                when(gitHubBuilderFactory.build(anyString())).thenReturn(fakeWithInstToken);
+                when(fakeWithInstToken.getOrganization(anyString())).thenReturn(fakeOrg);
+                doNothing().when(fakeOrg).add(fakeMyself, GHOrganization.Role.MEMBER);
 
-        // get current user, make sure that when courseStaffRepository.findByCourseId is
-        // called, it returns the current user
-
-        Course courseBefore = course1;
-
-        Course courseAfter = course2;
-        courseAfter.setSchool("UCSD");
-
-        when(courseRepository.findById(eq(courseBefore.getId()))).thenReturn(Optional.of(courseBefore));
-        when(courseRepository.save(eq(courseAfter))).thenReturn(courseAfter);
-
-        // get current user
-        User user = userService.getCurrentUser().getUser();
-        // mock user is staff
-        Staff courseStaff = Staff.builder().courseId(courseBefore.getId()).githubId(user.getGithubId()).build();
-        when(courseStaffRepository.findByCourseIdAndGithubId(courseBefore.getId(), user.getGithubId()))
-                .thenReturn(Optional
-                        .of(courseStaff));
-
-        // act
-        // get urlTemplate from courseAfter using string interpolation
-        String urlTemplate = String.format(
-                "/api/courses/update?id=%d&name=%s&school=%s&term=%s&startDate=%s&endDate=%s&githubOrg=%s",
-                courseAfter.getId(), courseAfter.getName(), courseAfter.getSchool(), courseAfter.getTerm(),
-                courseAfter.getStartDate().toString(), courseAfter.getEndDate().toString(), courseAfter.getGithubOrg());
-        MvcResult response = mockMvc.perform(
-                put(urlTemplate)
-                        .with(csrf()))
-                .andExpect(status().isOk()).andReturn();
-
-        // assert
-        verify(courseRepository, times(1)).save(courseBefore);
-        String expectedJson = mapper.writeValueAsString(courseAfter);
-        String responseString = response.getResponse().getContentAsString();
-        assertEquals(expectedJson, responseString);
-    }
-
-    // Instructor cannot update course if they are not staff
-    @WithMockUser(roles = { "INSTRUCTOR", "USER" })
-    @Test
-    public void an_instructor_user_cannot_update_a_course_if_they_are_not_staff() throws Exception {
-        // arrange
-
-        Course courseBefore = Course.builder()
-                .id(1L)
-                .name("CS16")
-                .school("UCSB")
-                .term("F23")
-                .startDate(LocalDateTime.parse("2023-09-01T00:00:00"))
-                .endDate(LocalDateTime.parse("2023-12-31T00:00:00"))
-                .githubOrg("ucsb-cs16-f23")
-                .build();
-
-        Course courseAfter = Course.builder()
-                .id(1L)
-                .name("CS16")
-                .school("UCSB")
-                .term("F23")
-                .startDate(LocalDateTime.parse("2023-09-01T00:00:00"))
-                .endDate(LocalDateTime.parse("2023-12-31T00:00:00"))
-                .githubOrg("ucsb-cs16-f23")
-                .build();
-
-        when(courseRepository.findById(eq(courseBefore.getId()))).thenReturn(Optional.of(courseBefore));
-        when(courseRepository.save(eq(courseAfter))).thenReturn(courseAfter);
-        // mock user is not staff
-
-        User user = userService.getCurrentUser().getUser();
-        Integer githubId = user.getGithubId();
-        ArrayList<Staff> notStaff = new ArrayList<>();
-        notStaff.add(Staff.builder().githubId(githubId - 1).build());
-        when(courseStaffRepository.findByCourseId(courseBefore.getId()))
-                .thenReturn(notStaff);
-        // act
-        MvcResult response = mockMvc.perform(
-                put("/api/courses/update?id=1&name=CS16&school=UCSB&term=F23&startDate=2023-09-01T00:00:00&endDate=2023-12-31T00:00:00&githubOrg=ucsb-cs16-f23")
-                        .with(csrf()))
-                .andExpect(status().isForbidden()).andReturn();
-
-        // assert
-        verify(courseRepository, times(0)).save(courseAfter);
-
-        // verify message is correct
-        Map<String, String> responseMap = mapper.readValue(response.getResponse().getContentAsString(),
-                new TypeReference<Map<String, String>>() {
-                });
-        Map<String, String> expectedMap = Map.of("message", "User is not a staff member for this course", "type",
-                "AccessDeniedException");
-        assertEquals(expectedMap, responseMap);
-    }
-
-    // User cannot update course at all
-    @WithMockUser(roles = { "USER" })
-    @Test
-    public void a_user_cannot_update_a_course() throws Exception {
-        // arrange
-
-        Course courseBefore = Course.builder()
-                .id(1L)
-                .name("CS16")
-                .school("UCSB")
-                .term("F23")
-                .startDate(LocalDateTime.parse("2023-09-01T00:00:00"))
-                .endDate(LocalDateTime.parse("2023-12-31T00:00:00"))
-                .githubOrg("ucsb-cs16-f23")
-                .build();
-
-        Course courseAfter = Course.builder()
-                .id(1L)
-                .name("CS32")
-                .school("UCSB")
-                .term("F23")
-                .startDate(LocalDateTime.parse("2023-09-01T00:00:00"))
-                .endDate(LocalDateTime.parse("2023-12-31T00:00:00"))
-                .githubOrg("ucsb-cs32-f23")
-                .build();
-
-        when(courseRepository.findById(eq(courseBefore.getId()))).thenReturn(Optional.of(courseBefore));
-        when(courseRepository.save(eq(courseAfter))).thenReturn(courseAfter);
-
-        // act
-        MvcResult response = mockMvc.perform(
-                put("/api/courses/update?id=1&name=CS32&school=UCSB&term=F23&startDate=2023-09-01T00:00:00&endDate=2023-12-31T00:00:00&githubOrg=ucsb-cs32-f23")
-                        .with(csrf()))
-                .andExpect(status().isForbidden()).andReturn();
-
-        // assert
-        verify(courseRepository, times(0)).save(courseAfter);
-
-        // verify message is correct
-        Map<String, String> responseMap = mapper.readValue(response.getResponse().getContentAsString(),
-                new TypeReference<Map<String, String>>() {
-                });
-        Map<String, String> expectedMap = Map.of("message", "Access Denied", "type",
-                "AccessDeniedException");
-        assertEquals(expectedMap, responseMap);
-    }
-
-    // admin user cannot delete non existing course
-    @WithMockUser(roles = { "ADMIN", "USER" })
-    @Test
-    public void an_admin_user_cannot_delete_non_existing_course() throws Exception {
-        // arrange
-
-        when(courseRepository.findById(eq(42L))).thenReturn(Optional.empty());
-        // act
-
-        MvcResult response = mockMvc.perform(
-                delete("/api/courses/delete?id=42")
+                MvcResult response = mockMvc.perform(post("/api/courses/join?courseId=1")
                                 .with(csrf()))
-                .andExpect(status().isNotFound()).andReturn();
-        // assert
+                                .andExpect(status().isOk()).andReturn();
 
-        Map<String,String> responseMap = mapper.readValue(response.getResponse().getContentAsString(), new TypeReference<Map<String,String>>(){});
-        Map<String,String> expectedMap = Map.of("message", "Course with id 42 not found", "type", "EntityNotFoundException");
-        assertEquals(expectedMap, responseMap);
-    }
+                verify(courseRepository, times(1)).findById(eq(1L));
+                verify(studentRepository, times(1)).save(any(Student.class));
+                String expectedJson = mapper.writeValueAsString(
+                                GeneralOperationResp.builder().success(true).message("Joined Successfully").build());
+                String responseString = response.getResponse().getContentAsString();
+                assertEquals(expectedJson, responseString);
+        }
 
-    // admin user can delete course
-    @WithMockUser(roles = { "ADMIN", "USER" })
-    @Test
-    public void an_admin_user_can_delete_a_course() throws Exception {
-        // arrange
+        @WithMockUser(roles = { "USER" })
+        @Test
+        public void user_not_on_roster_can_not_join() throws Exception {
+                User currentUser = currentUserService.getCurrentUser().getUser();
+                School school = School.builder().name("UCSB").abbrev("ucsb").build();
+                Student student = Student.builder().courseId(course1.getId()).studentId("user").email("user@ucsb.edu")
+                                .githubId(currentUser.getGithubId()).build();
 
-        Course courseBefore = Course.builder()
-                .id(1L)
-                .name("CS16")
-                .school("UCSB")
-                .term("F23")
-                .startDate(LocalDateTime.parse("2023-09-01T00:00:00"))
-                .endDate(LocalDateTime.parse("2023-12-31T00:00:00"))
-                .githubOrg("ucsb-cs16-f23")
-                .build();
+                Student student1 = Student.builder().courseId(course1.getId()).studentId("user").email("user@ucsb.edu")
+                                .githubId(null).build();
 
-        when(courseRepository.findById(eq(courseBefore.getId()))).thenReturn(Optional.of(courseBefore));
+                when(courseRepository.findById(eq(course1.getId()))).thenReturn(Optional.of(course1));
+                when(schoolRepository.findByName(eq("UCSB"))).thenReturn(Optional.of(school));
+                when(studentRepository.findByCourseIdAndEmail(eq(course1.getId()),
+                                eq("user@ucsb.edu")))
+                                .thenReturn(Optional.empty());
+                when(studentRepository.save(any())).thenReturn(student);
 
-        // act
-        MvcResult response = mockMvc.perform(
-                delete("/api/courses/delete?id=1")
-                        .with(csrf()))
-                .andExpect(status().isOk()).andReturn();
+                // Build for user
+                GHEmail fakeemail = mock(GHEmail.class);
+                when(fakeemail.getEmail()).thenReturn("user@ucsb.edu");
+                List<GHEmail> emails = new ArrayList<GHEmail>(List.of(fakeemail));
 
-        // assert
-        verify(courseRepository, times(1)).delete(courseBefore);
-        String expectedJson = mapper.writeValueAsString(courseBefore);
-        String responseString = response.getResponse().getContentAsString();
-        assertEquals(expectedJson, responseString);
-    }
+                GitHub fakeUser = mock(GitHub.class);
+                GHMyself fakeMyself = mock(GHMyself.class);
+                when(gitHubBuilderFactory.buildOauth(any())).thenReturn(fakeUser);
+                when(fakeUser.getMyself()).thenReturn(fakeMyself);
+                when(fakeMyself.getEmails2()).thenReturn(emails);
 
-    // Instructor can delete course if they are staff
-    @WithMockUser(roles = { "INSTRUCTOR", "USER" })
-    @Test
-    public void an_instructor_user_can_delete_a_course_if_they_are_staff() throws Exception {
-        // arrange
+                // Build for normal app
+                GitHub fake = mock(GitHub.class);
+                GHApp fakeApp = mock(GHApp.class);
+                GHAppInstallation fakeInst = mock(GHAppInstallation.class);
+                GHAppCreateTokenBuilder fakeTokenBuilder = mock(GHAppCreateTokenBuilder.class);
+                GHAppInstallationToken fakeInstToken = mock(GHAppInstallationToken.class);
+                when(gitHubBuilderFactory.build(any(JwtProvider.class))).thenReturn(fake);
+                when(fake.getApp()).thenReturn(fakeApp);
+                when(fakeApp.getInstallationByOrganization(any())).thenReturn(fakeInst);
+                when(fakeInst.createToken()).thenReturn(fakeTokenBuilder);
+                when(fakeTokenBuilder.create()).thenReturn(fakeInstToken);
+                when(fakeInstToken.getToken()).thenReturn("OHHHHH FAKE TOKEN");
+                when(fakeApp.getSlug()).thenReturn("123");
 
-        // get current user, make sure that when courseStaffRepository.findByCourseId is
-        // called, it returns the current user
+                // Build with token
+                GitHub fakeWithInstToken = mock(GitHub.class);
+                GHOrganization fakeOrg = mock(GHOrganization.class);
+                when(gitHubBuilderFactory.build(anyString())).thenReturn(fakeWithInstToken);
+                when(fakeWithInstToken.getOrganization(anyString())).thenReturn(fakeOrg);
+                doNothing().when(fakeOrg).add(fakeMyself, GHOrganization.Role.MEMBER);
 
-        Course courseBefore = Course.builder()
-                .id(1L)
-                .name("CS16")
-                .school("UCSB")
-                .term("F23")
-                .startDate(LocalDateTime.parse("2023-09-01T00:00:00"))
-                .endDate(LocalDateTime.parse("2023-12-31T00:00:00"))
-                .githubOrg("ucsb-cs16-f23")
-                .build();
+                MvcResult response = mockMvc.perform(post("/api/courses/join?courseId=1")
+                                .with(csrf()))
+                                .andExpect(status().isForbidden()).andReturn();
 
-        when(courseRepository.findById(eq(courseBefore.getId()))).thenReturn(Optional.of(courseBefore));
+                verify(courseRepository, times(1)).findById(eq(1L));
+                Map<String, String> responseMap = mapper.readValue(response.getResponse().getContentAsString(),
+                                new TypeReference<Map<String, String>>() {
+                                });
+                Map<String, String> expectedMap = Map.of("message", "User is not in the roster", "type",
+                                "AccessDeniedException");
+                assertEquals(expectedMap, responseMap);
+        }
 
-        // get current user
-        User user = userService.getCurrentUser().getUser();
-        // mock user is staff
-        Staff courseStaff = Staff.builder().courseId(courseBefore.getId()).githubId(user.getGithubId()).build();
-        when(courseStaffRepository.findByCourseIdAndGithubId(courseBefore.getId(), user.getGithubId()))
-                .thenReturn(Optional
-                        .of(courseStaff));
-        // act
-        MvcResult response = mockMvc.perform(
-                delete("/api/courses/delete?id=1")
-                        .with(csrf()))
-                .andExpect(status().isOk()).andReturn();
+        @WithMockUser(roles = { "USER" })
+        @Test
+        public void user_can_not_join_course_wo_school_email() throws Exception {
+                User currentUser = currentUserService.getCurrentUser().getUser();
+                School school = School.builder().name("UCSB").abbrev("ucsb").build();
+                // ArrayList<String> emails = new ArrayList<>(List.of("user@example.com"));
+                Student student = Student.builder().courseId(course1.getId()).studentId("user").email("user@ucsb.edu")
+                                .githubId(currentUser.getGithubId()).build();
 
-        // assert
-        verify(courseRepository, times(1)).delete(courseBefore);
-        String expectedJson = mapper.writeValueAsString(courseBefore);
-        String responseString = response.getResponse().getContentAsString();
-        assertEquals(expectedJson, responseString);
-    }
+                when(courseRepository.findById(eq(course1.getId()))).thenReturn(Optional.of(course1));
+                when(schoolRepository.findByName(eq("UCSB"))).thenReturn(Optional.of(school));
+                when(studentRepository.findByCourseIdAndStudentId(eq(course1.getId()),
+                                eq("user")))
+                                .thenReturn(Optional.empty());
+                when(studentRepository.save(any())).thenReturn(student);
 
-    // Instructor cannot delete course if they are not staff
-    @WithMockUser(roles = { "INSTRUCTOR", "USER" })
-    @Test
-    public void an_instructor_user_cannot_delete_a_course_if_they_are_not_staff() throws Exception {
-        // arrange
+                // Build for user
+                GHEmail fakeemail = mock(GHEmail.class);
+                when(fakeemail.getEmail()).thenReturn("user@example.edu");
+                List<GHEmail> emails = new ArrayList<GHEmail>(List.of(fakeemail));
 
-        Course courseBefore = Course.builder()
-                .id(1L)
-                .name("CS16")
-                .school("UCSB")
-                .term("F23")
-                .startDate(LocalDateTime.parse("2023-09-01T00:00:00"))
-                .endDate(LocalDateTime.parse("2023-12-31T00:00:00"))
-                .githubOrg("ucsb-cs16-f23")
-                .build();
+                GitHub fakeUser = mock(GitHub.class);
+                GHMyself fakeMyself = mock(GHMyself.class);
+                when(gitHubBuilderFactory.buildOauth(any())).thenReturn(fakeUser);
+                when(fakeUser.getMyself()).thenReturn(fakeMyself);
+                when(fakeMyself.getEmails2()).thenReturn(emails);
 
-        when(courseRepository.findById(eq(courseBefore.getId()))).thenReturn(Optional.of(courseBefore));
-        // mock user is not staff
+                // Build for normal app
+                GitHub fake = mock(GitHub.class);
+                GHApp fakeApp = mock(GHApp.class);
+                GHAppInstallation fakeInst = mock(GHAppInstallation.class);
+                GHAppCreateTokenBuilder fakeTokenBuilder = mock(GHAppCreateTokenBuilder.class);
+                GHAppInstallationToken fakeInstToken = mock(GHAppInstallationToken.class);
+                when(gitHubBuilderFactory.build(any(JwtProvider.class))).thenReturn(fake);
+                when(fake.getApp()).thenReturn(fakeApp);
+                when(fakeApp.getInstallationByOrganization(any())).thenReturn(fakeInst);
+                when(fakeInst.createToken()).thenReturn(fakeTokenBuilder);
+                when(fakeTokenBuilder.create()).thenReturn(fakeInstToken);
+                when(fakeInstToken.getToken()).thenReturn("OHHHHH FAKE TOKEN");
+                when(fakeApp.getSlug()).thenReturn("123");
 
-        User user = userService.getCurrentUser().getUser();
-        Integer githubId = user.getGithubId();
-        ArrayList<Staff> notStaff = new ArrayList<>();
-        notStaff.add(Staff.builder().githubId(githubId - 1).build());
-        when(courseStaffRepository.findByCourseId(courseBefore.getId()))
-                .thenReturn(notStaff);
-        // act
-        MvcResult response = mockMvc.perform(
-                delete("/api/courses/delete?id=1")
-                        .with(csrf()))
-                .andExpect(status().isForbidden()).andReturn();
+                // Build with token
+                GitHub fakeWithInstToken = mock(GitHub.class);
+                GHOrganization fakeOrg = mock(GHOrganization.class);
+                when(gitHubBuilderFactory.build(anyString())).thenReturn(fakeWithInstToken);
+                when(fakeWithInstToken.getOrganization(anyString())).thenReturn(fakeOrg);
+                doNothing().when(fakeOrg).add(fakeMyself, GHOrganization.Role.MEMBER);
 
-        // assert
-        verify(courseRepository, times(0)).delete(courseBefore);
+                MvcResult response = mockMvc.perform(post("/api/courses/join?courseId=1")
+                                .with(csrf()))
+                                .andExpect(status().isForbidden()).andReturn();
 
-        // verify message is correct
-        Map<String, String> responseMap = mapper.readValue(response.getResponse().getContentAsString(),
-                new TypeReference<Map<String, String>>() {
-                });
-        Map<String, String> expectedMap = Map.of("message", "User is not a staff member for this course", "type",
-                "AccessDeniedException");
-        assertEquals(expectedMap, responseMap);
-    }
+                verify(courseRepository, times(1)).findById(eq(1L));
+                Map<String, String> responseMap = mapper.readValue(response.getResponse().getContentAsString(),
+                                new TypeReference<Map<String, String>>() {
+                                });
+                Map<String, String> expectedMap = Map.of("message", "User does not have a school email", "type",
+                                "AccessDeniedException");
+                assertEquals(expectedMap, responseMap);
+        }
 
-    // User cannot delete course at all
-    @WithMockUser(roles = { "USER" })
-    @Test
-    public void a_user_cannot_delete_a_course() throws Exception {
-        // arrange
+        @WithMockUser(roles = { "USER" })
+        @Test
+        public void user_can_not_join_course_if_already_there() throws Exception {
+                User currentUser = currentUserService.getCurrentUser().getUser();
+                School school = School.builder().name("UCSB").abbrev("ucsb").build();
+                Student student = Student.builder().courseId(course1.getId()).studentId("user").email("user@ucsb.edu")
+                                .githubId(currentUser.getGithubId()).build();
 
-        Course courseBefore = Course.builder()
-                .id(1L)
-                .name("CS16")
-                .school("UCSB")
-                .term("F23")
-                .startDate(LocalDateTime.parse("2023-09-01T00:00:00"))
-                .endDate(LocalDateTime.parse("2023-12-31T00:00:00"))
-                .githubOrg("ucsb-cs16-f23")
-                .build();
+                when(courseRepository.findById(eq(course1.getId()))).thenReturn(Optional.of(course1));
+                when(schoolRepository.findByName(eq("UCSB"))).thenReturn(Optional.of(school));
+                when(studentRepository.findByCourseIdAndEmail(eq(course1.getId()),
+                                eq("user@ucsb.edu")))
+                                .thenReturn(Optional.of(student));
+                when(studentRepository.save(any())).thenReturn(student);
 
-        when(courseRepository.findById(eq(courseBefore.getId()))).thenReturn(Optional.of(courseBefore));
+                // Build for user
+                GHEmail fakeemail = mock(GHEmail.class);
+                when(fakeemail.getEmail()).thenReturn("user@ucsb.edu");
+                List<GHEmail> emails = new ArrayList<GHEmail>(List.of(fakeemail));
 
-        // act
-        MvcResult response = mockMvc.perform(
-                delete("/api/courses/delete?id=1")
-                        .with(csrf()))
-                .andExpect(status().isForbidden()).andReturn();
+                GitHub fakeUser = mock(GitHub.class);
+                GHMyself fakeMyself = mock(GHMyself.class);
+                when(gitHubBuilderFactory.buildOauth(any())).thenReturn(fakeUser);
+                when(fakeUser.getMyself()).thenReturn(fakeMyself);
+                when(fakeMyself.getEmails2()).thenReturn(emails);
 
-        // assert
-        verify(courseRepository, times(0)).delete(courseBefore);
+                // Build for normal app
+                GitHub fake = mock(GitHub.class);
+                GHApp fakeApp = mock(GHApp.class);
+                GHAppInstallation fakeInst = mock(GHAppInstallation.class);
+                GHAppCreateTokenBuilder fakeTokenBuilder = mock(GHAppCreateTokenBuilder.class);
+                GHAppInstallationToken fakeInstToken = mock(GHAppInstallationToken.class);
+                when(gitHubBuilderFactory.build(any(JwtProvider.class))).thenReturn(fake);
+                when(fake.getApp()).thenReturn(fakeApp);
+                when(fakeApp.getInstallationByOrganization(any())).thenReturn(fakeInst);
+                when(fakeInst.createToken()).thenReturn(fakeTokenBuilder);
+                when(fakeTokenBuilder.create()).thenReturn(fakeInstToken);
+                when(fakeInstToken.getToken()).thenReturn("OHHHHH FAKE TOKEN");
+                when(fakeApp.getSlug()).thenReturn("123");
 
-        // verify message is correct
-        Map<String, String> responseMap = mapper.readValue(response.getResponse().getContentAsString(),
-                new TypeReference<Map<String, String>>() {
-                });
-        Map<String, String> expectedMap = Map.of("message", "Access Denied", "type",
-                "AccessDeniedException");
-        assertEquals(expectedMap, responseMap);
-    }
+                // Build with token
+                GitHub fakeWithInstToken = mock(GitHub.class);
+                GHOrganization fakeOrg = mock(GHOrganization.class);
+                when(gitHubBuilderFactory.build(anyString())).thenReturn(fakeWithInstToken);
+                when(fakeWithInstToken.getOrganization(anyString())).thenReturn(fakeOrg);
+                doNothing().when(fakeOrg).add(fakeMyself, GHOrganization.Role.MEMBER);
+
+                MvcResult response = mockMvc.perform(post("/api/courses/join?courseId=1")
+                                .with(csrf()))
+                                .andExpect(status().isForbidden()).andReturn();
+
+                verify(courseRepository, times(1)).findById(eq(1L));
+                Map<String, String> responseMap = mapper.readValue(response.getResponse().getContentAsString(),
+                                new TypeReference<Map<String, String>>() {
+                                });
+                Map<String, String> expectedMap = Map.of("message", "User is already in the org", "type",
+                                "AccessDeniedException");
+                assertEquals(expectedMap, responseMap);
+        }
+
+        @WithMockUser(roles = { "USER" })
+        @Test
+        public void user_can_not_join_due_to_github_error() throws Exception {
+                User currentUser = currentUserService.getCurrentUser().getUser();
+                School school = School.builder().name("UCSB").abbrev("ucsb").build();
+                Student student = Student.builder().courseId(course1.getId()).studentId("user").email("user@ucsb.edu")
+                                .githubId(0).build();
+
+                when(courseRepository.findById(eq(course1.getId()))).thenReturn(Optional.of(course1));
+                when(schoolRepository.findByName(eq("UCSB"))).thenReturn(Optional.of(school));
+                when(studentRepository.findByCourseIdAndEmail(eq(course1.getId()),
+                                eq("user@ucsb.edu")))
+                                .thenReturn(Optional.of(student));
+                when(studentRepository.save(any())).thenReturn(student);
+
+                // Build for user
+                GHEmail fakeemail = mock(GHEmail.class);
+                when(fakeemail.getEmail()).thenReturn("user@ucsb.edu");
+                List<GHEmail> emails = new ArrayList<GHEmail>(List.of(fakeemail));
+
+                GitHub fakeUser = mock(GitHub.class);
+                GHMyself fakeMyself = mock(GHMyself.class);
+                when(gitHubBuilderFactory.buildOauth(any())).thenReturn(fakeUser);
+                when(fakeUser.getMyself()).thenReturn(fakeMyself);
+                when(fakeMyself.getEmails2()).thenReturn(emails);
+
+                // Build for normal app
+                GitHub fake = mock(GitHub.class);
+                GHApp fakeApp = mock(GHApp.class);
+                GHAppInstallation fakeInst = mock(GHAppInstallation.class);
+                GHAppCreateTokenBuilder fakeTokenBuilder = mock(GHAppCreateTokenBuilder.class);
+                GHAppInstallationToken fakeInstToken = mock(GHAppInstallationToken.class);
+                when(gitHubBuilderFactory.build(any(JwtProvider.class))).thenReturn(fake);
+                when(fake.getApp()).thenReturn(fakeApp);
+                when(fakeApp.getInstallationByOrganization(any())).thenReturn(fakeInst);
+                when(fakeInst.createToken()).thenReturn(fakeTokenBuilder);
+                when(fakeTokenBuilder.create()).thenReturn(fakeInstToken);
+                when(fakeInstToken.getToken()).thenReturn("OHHHHH FAKE TOKEN");
+                when(fakeApp.getSlug()).thenReturn("123");
+
+                // Build with token
+                GitHub fakeWithInstToken = mock(GitHub.class);
+                GHOrganization fakeOrg = mock(GHOrganization.class);
+                when(gitHubBuilderFactory.build(anyString())).thenReturn(fakeWithInstToken);
+                when(fakeWithInstToken.getOrganization(anyString())).thenReturn(fakeOrg);
+                doThrow(new IOException("GITHUB ERROR")).when(fakeOrg).add(fakeMyself, GHOrganization.Role.MEMBER);
+
+                MvcResult response = mockMvc.perform(post("/api/courses/join?courseId=1")
+                                .with(csrf()))
+                                .andExpect(status().isForbidden()).andReturn();
+
+                verify(courseRepository, times(1)).findById(eq(1L));
+                Map<String, String> responseMap = mapper.readValue(response.getResponse().getContentAsString(),
+                                new TypeReference<Map<String, String>>() {
+                                });
+                Map<String, String> expectedMap = Map.of("message",
+                                "Failed to invite user to org. Is this user already in the org?", "type",
+                                "AccessDeniedException");
+                assertEquals(expectedMap, responseMap);
+        }
+
+        @WithMockUser(roles = { "USER" })
+        @Test
+        public void user_can_not_join_due_to_github_email_error() throws Exception {
+                User currentUser = currentUserService.getCurrentUser().getUser();
+                School school = School.builder().name("UCSB").abbrev("ucsb").build();
+                Student student = Student.builder().courseId(course1.getId()).studentId("user").email("user@ucsb.edu")
+                                .githubId(0).build();
+
+                when(courseRepository.findById(eq(course1.getId()))).thenReturn(Optional.of(course1));
+                when(schoolRepository.findByName(eq("UCSB"))).thenReturn(Optional.of(school));
+                when(studentRepository.findByCourseIdAndEmail(eq(course1.getId()),
+                                eq("user@ucsb.edu")))
+                                .thenReturn(Optional.of(student));
+                when(studentRepository.save(any())).thenReturn(student);
+
+                // Build for user
+                GHEmail fakeemail = mock(GHEmail.class);
+                when(fakeemail.getEmail()).thenReturn("user@ucsb.edu");
+                List<GHEmail> emails = new ArrayList<GHEmail>(List.of(fakeemail));
+
+                GitHub fakeUser = mock(GitHub.class);
+                GHMyself fakeMyself = mock(GHMyself.class);
+                when(gitHubBuilderFactory.buildOauth(any())).thenReturn(fakeUser);
+                when(fakeUser.getMyself()).thenReturn(fakeMyself);
+                when(fakeMyself.getEmails2()).thenThrow(new IOException("Failed to fetch email"));
+
+                // Build for normal app
+                GitHub fake = mock(GitHub.class);
+                GHApp fakeApp = mock(GHApp.class);
+                GHAppInstallation fakeInst = mock(GHAppInstallation.class);
+                GHAppCreateTokenBuilder fakeTokenBuilder = mock(GHAppCreateTokenBuilder.class);
+                GHAppInstallationToken fakeInstToken = mock(GHAppInstallationToken.class);
+                when(gitHubBuilderFactory.build(any(JwtProvider.class))).thenReturn(fake);
+                when(fake.getApp()).thenReturn(fakeApp);
+                when(fakeApp.getInstallationByOrganization(any())).thenReturn(fakeInst);
+                when(fakeInst.createToken()).thenReturn(fakeTokenBuilder);
+                when(fakeTokenBuilder.create()).thenReturn(fakeInstToken);
+                when(fakeInstToken.getToken()).thenReturn("OHHHHH FAKE TOKEN");
+                when(fakeApp.getSlug()).thenReturn("123");
+
+                // Build with token
+                GitHub fakeWithInstToken = mock(GitHub.class);
+                GHOrganization fakeOrg = mock(GHOrganization.class);
+                when(gitHubBuilderFactory.build(anyString())).thenReturn(fakeWithInstToken);
+                when(fakeWithInstToken.getOrganization(anyString())).thenReturn(fakeOrg);
+                doNothing().when(fakeOrg).add(fakeMyself, GHOrganization.Role.MEMBER);
+
+                MvcResult response = mockMvc.perform(post("/api/courses/join?courseId=1")
+                                .with(csrf()))
+                                .andExpect(status().isForbidden()).andReturn();
+
+                verify(courseRepository, times(1)).findById(eq(1L));
+                Map<String, String> responseMap = mapper.readValue(response.getResponse().getContentAsString(),
+                                new TypeReference<Map<String, String>>() {
+                                });
+                Map<String, String> expectedMap = Map.of("message",
+                                "Failed to get user email.", "type",
+                                "AccessDeniedException");
+                assertEquals(expectedMap, responseMap);
+        }
+
+        @WithMockUser(roles = { "USER" })
+        @Test
+        public void user_can_not_join_if_course_dne() throws Exception {
+                User currentUser = currentUserService.getCurrentUser().getUser();
+                School school = School.builder().name("UCSB").abbrev("ucsb").build();
+                ArrayList<String> emails = new ArrayList<>(List.of("user@ucsb.edu"));
+                Student student = Student.builder().courseId(course1.getId()).studentId("user").email("user@ucsb.edu")
+                                .githubId(currentUser.getGithubId()).build();
+
+                when(courseRepository.findById(eq(course1.getId()))).thenReturn(Optional.empty());
+                when(schoolRepository.findByName(eq("UCSB"))).thenReturn(Optional.of(school));
+                when(studentRepository.findByCourseIdAndEmail(eq(course1.getId()),
+                                eq("user@ucsb.edu")))
+                                .thenReturn(Optional.empty());
+                when(studentRepository.save(any())).thenReturn(student);
+
+                MvcResult response = mockMvc.perform(post("/api/courses/join?courseId=1")
+                                .with(csrf()))
+                                .andExpect(status().isNotFound()).andReturn();
+
+                verify(courseRepository, times(1)).findById(eq(1L));
+                Map<String, String> responseMap = mapper.readValue(response.getResponse().getContentAsString(),
+                                new TypeReference<Map<String, String>>() {
+                                });
+                Map<String, String> expectedMap = Map.of("message", "Course with id 1 not found", "type",
+                                "EntityNotFoundException");
+                assertEquals(expectedMap, responseMap);
+        }
+
+        @WithMockUser(roles = { "USER" })
+        @Test
+        public void user_can_not_join_if_school_dne() throws Exception {
+                User currentUser = currentUserService.getCurrentUser().getUser();
+                School school = School.builder().name("UCSB").abbrev("ucsb").build();
+                ArrayList<String> emails = new ArrayList<>(List.of("user@ucsb.edu"));
+                Student student = Student.builder().courseId(course1.getId()).studentId("user").email("user@ucsb.edu")
+                                .githubId(currentUser.getGithubId()).build();
+
+                when(courseRepository.findById(eq(course1.getId()))).thenReturn(Optional.of(course1));
+                when(schoolRepository.findByName(eq("UCSB"))).thenReturn(Optional.empty());
+                when(studentRepository.findByCourseIdAndStudentId(eq(course1.getId()),
+                                eq("user")))
+                                .thenReturn(Optional.empty());
+                when(studentRepository.save(any())).thenReturn(student);
+
+                MvcResult response = mockMvc.perform(post("/api/courses/join?courseId=1")
+                                .with(csrf()))
+                                .andExpect(status().isNotFound()).andReturn();
+
+                verify(courseRepository, times(1)).findById(eq(1L));
+                Map<String, String> responseMap = mapper.readValue(response.getResponse().getContentAsString(),
+                                new TypeReference<Map<String, String>>() {
+                                });
+                Map<String, String> expectedMap = Map.of("message", "School with id UCSB not found", "type",
+                                "EntityNotFoundException");
+                assertEquals(expectedMap, responseMap);
+        }
 }

@@ -56,3 +56,10 @@ build/
 ### .DS_Store ###
 .DS_Store
 
+### Key Files ###
+*.key
+*.pem
+*.der
+
+### Log Files ###
+*.log

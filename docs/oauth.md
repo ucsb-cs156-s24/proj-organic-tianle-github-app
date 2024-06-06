@@ -1,6 +1,6 @@
 # OAuth Setup
 
-This Spring Boot application is set up to use Github OAuth as it's authentication scheme.
+This Spring Boot application is set up to use **Github App** as it's authentication scheme (please note the **Github Oauth** client will NOT work for some of the features).
 
 Setting this up on localhost requires the first two steps below; getting this to work on Dokku requires additional 
 steps.
@@ -14,6 +14,46 @@ Instructions for setting up Github OAuth can be found here:
 1. Obtaining a Github *client id* and *client secret*, which is described here: 
    * <https://github.com/ucsb-cs156/ucsb-cs156.github.io/blob/main/topics/oauth/oauth_github_setup.md>
 2. Configuring the `.env` file with these values.
+
+3. In addition to this, please go to the private key part, and generate a private key for this app.
+    1. Download the key from github
+    2. Save it under the the root directory of this project as `<name>.pem`
+    3. Run `./convertKey.sh <name>.pem` to get a key in the java format, will will be saved as `.github.pk.der`.
+    4. Remove the `<name>.pem` file (or store it in a safe place, but do NOT commit it to the repo).
+   
+4. Your GithubApp must have correct permissions setup to access.
+   1. Go to the `Permissions & events` tab in your GithubApp settings.
+    
+      ![image](https://github.com/ucsb-cs156-s24/proj-organic-s24-5pm-3/assets/43783877/cb8a55c1-daea-45a6-81c4-cb7552597e1d)
+      
+   2. Under `Organization permissions`, make sure `Rea and Write` is checked for `Administration` and `Members`.
+
+      ![image](https://github.com/ucsb-cs156-s24/proj-organic-s24-5pm-3/assets/43783877/b0b25a0d-9eab-4f87-be29-cb0d0d968fd4)
+
+   3. Under `Account permissions`, make sure `Read` is checked for `User email address`.
+
+      ![image](https://github.com/ucsb-cs156-s24/proj-organic-s24-5pm-3/assets/43783877/94ba8e7d-0bd0-40ec-b0c1-4db45b037877)
+
+
+Please note that things gets a little bit different in the production environment.
+
+### Private key in production
+
+*Precondition: You have your `.github.pk.der` generated*
+
+1. Make a new directory on your dokku server, preferably under your home directory, name it `<dir>` (you pick), and copy the `.github.pk.der` file to this directory.
+2. Run `dokku storage:mount <your-app> <absolute-path-to-the-dir-you-created>:/app`. You can use the command `pwd` to see the absolute path.
+3. Use `dokku storage:list <your-app>` to see if it's mounted.
+4. Run `dokku config:set <your-app> --no-restart GITHUB_PKFILE=/app/.github.pk.der` to set the environment variable.
+5. Run `dokku ps:rebuild <your-app>` to restart the app.
+
+**If you run into errors, or it's just simply not working, please try to change the permission of your `.github.pk.der` file to be readable to the dokku user**
+
+The application show error on course edit page if the private key is misconfigured.
+
+If the application failed to start due to connection refused, please try to increase the wait time for dokke via `dokku config:set <yourapp> DOKKU_DEFAULT_CHECKS_WAIT=20`.
+
+Please refer to this documentation for details: https://dokku.com/docs~v0.8.2/deployment/zero-downtime-deploys/
 
 
 # About the `.env` and `.env.SAMPLE` files.
